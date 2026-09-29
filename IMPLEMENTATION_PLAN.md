@@ -177,7 +177,8 @@ THIRD_PARTY_NOTICES.md
 容器封装约 1-2 个工作日，鉴权网关另增加半天到一天。普通升级约 30-60 分钟；遇到接口或依赖变化需额外排查。
 
 当前完成：鉴权与令牌管理、4 个核心测试、上游包校验、完整 Linux 依赖锁、Dockerfile/Compose、Actions/推广流程与部署说明；Actionlint、Ruff 和 YAML 语法检查通过。
-当前未完成：实际镜像构建和启动、Zotero 翻译联调、GitHub/Docker Hub 远程发布。当前机器无 Docker，实际镜像检查由 Actions 或服务器执行。
+2026-09-29 已推送到 GitHub，并通过首次云端镜像构建和容器启动检查（Actions run 36513219727）。提交作者及提交者按用户最新指示使用 Wangtengzhou，保留 Agent: Codex。
+当前未完成：Zotero 翻译联调、Docker Hub 发布。发布需要 GitHub Actions Secret DOCKERHUB_TOKEN；DOCKERHUB_USERNAME 已配置。
 
 ## 10. 已确认、待核实信息与执行边界
 

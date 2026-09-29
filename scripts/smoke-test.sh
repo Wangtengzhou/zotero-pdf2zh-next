@@ -49,6 +49,7 @@ code, body = status('/access/' + original + '/health')
 assert code == 200 and json.loads(body)['version'] == '4.1.7'
 assert metadata.version('pdf2zh-next') == '2.9.0'
 assert metadata.version('babeldoc') == '0.6.2'
+subprocess.run(['pdf2zh_next', '--help'], check=True, stdout=subprocess.DEVNULL)
 assert subprocess.check_output(['pdf2zh-admin', 'token', 'show'], text=True).strip() == original
 assert subprocess.check_output(['pdf2zh-admin', 'url', 'show'], text=True).strip() == tokens.public_url(original)
 subprocess.run(['pdf2zh-admin', 'token', 'reset'], check=True, stdout=subprocess.DEVNULL)

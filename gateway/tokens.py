@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 
 
 def state_dir():
-    return Path(os.environ.get("AUTH_STATE_DIR", "/app/gateway/state"))
+    return Path(os.environ.get("GATEWAY_STATE_DIR", "/app/gateway/state"))
 
 
 @contextmanager

@@ -61,7 +61,7 @@ class CoreTests(unittest.TestCase):
 
     def test_terminal_show_url_and_reset(self):
         original = tokens.initialize(self.directory)
-        env = dict(os.environ, AUTH_STATE_DIR=str(self.directory), PUBLIC_BASE_URL="https://pdf.example.com")
+        env = dict(os.environ, GATEWAY_STATE_DIR=str(self.directory), PUBLIC_BASE_URL="https://pdf.example.com")
 
         def run(*args):
             return subprocess.check_output([sys.executable, "-m", "gateway.admin", *args], env=env, text=True).strip()

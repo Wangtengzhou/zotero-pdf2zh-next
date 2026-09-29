@@ -2,7 +2,7 @@
 
 使用原版 Zotero PDF2zh 服务端与官方 PDFMathTranslate Next，提供 Linux amd64 容器与 GitHub Actions 自动发布。与 NightWatcher314 同名项目无关联。
 
-当前：本地代码已实现，4 个核心测试通过。实际镜像构建、GitHub Actions 和真实 Zotero 翻译联调尚未执行，Docker Hub 镜像尚未发布。
+当前：4 个核心测试、云端镜像构建及容器启动检查通过。真实 Zotero 翻译联调尚未完成，Docker Hub 镜像尚未发布。
 
 ## 版本与入口
 
