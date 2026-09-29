@@ -271,6 +271,8 @@ Use the default `app` user. If the graphical console forces root, run `docker ex
 
 ### Upgrade the Image and Keep Your Data
 
+In the fnOS interface: stop the old container, pull or import the new image, reset the old container, then start it. During reset, confirm the target image version and retain the ports, environment variables and all four folder mappings. Do not delete the host folders. If the image tag still shows the old version, change it first; restarting alone does not switch versions.
+
 The upstream PDF2zh server, PDFMathTranslate Next and this container have separate version numbers. When upstream publishes an update, this project's maintainer updates the pinned versions and dependencies, checks compatibility, and publishes a new image through GitHub Actions. There is currently no scheduled workflow that automatically follows upstream releases.
 
 NAS users update this project's image. Do not run `pip install -U`, `git pull` or upstream self-update commands inside the container: those changes bypass compatibility checks and do not survive container recreation.
