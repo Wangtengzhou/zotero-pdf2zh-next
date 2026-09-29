@@ -8,7 +8,6 @@
 - Add complete Synology/fnOS folder mapping tables and copy-and-run online/offline Compose installation blocks.
 - Require Chinese and English changelog entries before new releases and generate bilingual Release notes.
 - Provide paired Chinese and English pages for all documentation.
-- Consolidate deployment into Synology / fnOS graphical deployment and Docker Compose, each with online and offline paths.
 - Publish version tags only going forward; remove commit tags and latest promotion.
 
 ## 0.1.2 - 2026-09-29
@@ -20,10 +19,6 @@
 - Add --base-url to URL display and reset commands for a chosen HTTP(S) address.
 - Distinguish token-directory permission errors from invalid token content.
 
-### Checks
-
-- Five core checks cover empty folders, preserved settings, unset domains and multiple displayed addresses.
-- Container checks cover named-volume persistence and startup with four empty host folders and no domain variable.
 
 ## 0.1.1 - 2026-09-29
 
@@ -41,8 +36,3 @@ Publication was canceled before image upload; the fixes are included in 0.1.2.
 - Provide URL and token retrieval plus live token reset.
 - Persist configuration, PDFs, tokens and resource caches.
 - Build, check and publish images with GitHub Actions. The initial policy included version and commit tags with separate latest promotion, later replaced by version tags only.
-
-### Checks
-
-- Four core checks cover authentication, forwarding, admin commands, persistence and errors.
-- Real translation and Zotero attachment import require deployment acceptance; CI does not call paid APIs.

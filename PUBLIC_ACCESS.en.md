@@ -2,89 +2,79 @@
 
 [简体中文](PUBLIC_ACCESS.md) | **English**
 
-## Address Rules
-
-Both LAN and public access use `/access/<token>`. The plugin appends connection-check, upload, polling and download paths to the complete address. The gateway validates each request independently of client IP or browser login.
+An access entry combines a server address with a token path. LAN access, public access and multiple proxy domains can use the same `/access/<token>` path, without client IP restrictions or browser login.
 
 ```text
 http://192.168.1.10:8890/access/<token>
 https://pdf.example.com/access/<token>
 ```
 
-The proxy must preserve the full path and query string. After validation, the gateway strips the token prefix and forwards to the internal server. All business endpoints are protected. Multiple domains can use the same token.
+## First Retrieval
 
-## Get Your Entry for the First Time
-
-Starting with `0.1.3`, open the container logs and wait for “服务已就绪 / Service ready”. The next line shows:
+Starting with `0.1.3`, successful startup health checks produce this log line:
 
 ```text
 安全入口 / Access entry: /access/YOUR-FULL-TOKEN
 ```
 
-Append the entire `/access/…` path to `http://YOUR-NAS-IP:8890` or `https://YOUR-PROXY-DOMAIN`. Enter the complete address in Zotero's **Python Server IP**, without `/health` or a trailing slash. Multiple domains can reuse the same path.
+Append the copied path to your NAS address or proxy domain and enter it in Zotero's **Python Server IP**. Do not append `/health` or a trailing `/` to the plugin address.
 
-The entry is printed once per startup after the authenticated health check succeeds. Restarts reuse the existing token. Optional `PUBLIC_BASE_URL` makes the log show a full URL; it is not required. On `0.1.2` and earlier, use the commands below.
+Every restart prints the current entry and retains the token. On `0.1.2` and earlier, use the commands below.
 
-## Retrieve the Current Entry Later
+## Retrieve It Again
 
-Open the container's terminal, select “New terminal / Execute command”, enter `/bin/sh`, and keep the default `app` user. Run:
+Open the container terminal, select “New terminal / Execute command”, enter `/bin/sh`, keep the default `app` user and run:
 
 ```bash
 pdf2zh-admin url show
 ```
 
-From the NAS system terminal or SSH, run instead:
+From the **NAS system terminal / SSH**, use instead:
 
 ```bash
 sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
 ```
 
-### Optional: Show Only the Token or a Full URL
+<details>
+<summary>Optional: display a full URL or only the token</summary>
 
-Run in the container console as the default `app` user (UID `10001`):
+Run in the container console, replacing example addresses with your own:
 
 ```bash
-pdf2zh-admin url show
-pdf2zh-admin token show
 pdf2zh-admin url show --base-url http://192.168.1.10:8890
 pdf2zh-admin url show --base-url https://pdf.example.com
+pdf2zh-admin token show
 ```
 
-From the server terminal, prefix commands with `docker exec zotero-pdf2zh-next`. Without an address setting, `url show` prints a path. `--base-url` selects an address for that command only. `PUBLIC_BASE_URL` is an optional display preference: an HTTP(S) origin and optional port, without a path, token or query. It does not bind the gateway to a domain.
+`--base-url` affects only that command's output. Optional `PUBLIC_BASE_URL` sets a persistent display preference; it is not required and does not bind proxy domains. Use an HTTP(S) origin and optional port, without paths, credentials or query parameters.
 
-## Reset
+</details>
 
-Let active translations finish. In the container console, run this to generate and display a new entry:
+## Replace the Token
+
+Let active translations finish. In the **container console**, run:
 
 ```bash
 pdf2zh-admin token reset
 ```
 
-From the NAS system terminal or SSH, run instead:
+From the **NAS system terminal / SSH**, use:
 
 ```bash
 sudo docker exec zotero-pdf2zh-next pdf2zh-admin token reset
 ```
 
-No restart is required. The command displays the new path or address. Update Zotero afterward: the old token is rejected for new requests, while previously authorized requests and streams can finish. Add `--base-url https://pdf.example.com` to display a full URL for that domain.
+The new entry appears and takes effect immediately, without restarting. Replace the old path in Zotero. The old token cannot start new requests; previously authorized requests can finish.
 
-Use `app` for resets inside the container. If the graphical console forces root, use the server-terminal command above to avoid creating files unreadable by the service user. Fix storage permissions first; resetting cannot repair mount permissions.
+Use the default `app` user in the container console. If the interface forces root, use the NAS command above to avoid creating token files unreadable by the service.
 
-## Storage and Logs
+## Storage and Sharing
 
-First startup generates a token at `/app/gateway/state/auth.json`. Restarts, container recreation and upgrades read the existing file. Retaining `auth` storage keeps the address unchanged.
+- The token is stored in `/app/gateway/state/auth.json`. Keep the `auth` mount during upgrades and recreation to retain the entry.
+- Old logs may retain an obsolete entry after a reset. The show command returns the current value.
+- **The full entry is a credential.** Redact tokens before sharing logs or screenshots. All holders share configuration and files; there is no multi-user isolation.
+- Use HTTPS publicly, preserve paths and queries through the proxy, and disable or redact token-bearing access logs.
+- Repair damaged files or permissions first. The service does not silently replace credentials, and reset cannot fix mount permissions.
+- Administration is available through the container/server terminal only, with no public token-management endpoint.
 
-Corrupt, invalid or inaccessible files cause service failure rather than silent credential replacement. Show commands are read-only; reset uses a file lock and atomic replacement.
-
-Startup logs contain the access entry; redact the token before sharing logs. After a reset, historical logs still contain the old entry, so use the show command for the current value. Explicit show and reset commands also print credentials in the terminal.
-
-## Access Boundaries
-
-- The full address is a credential. All holders share business data and configuration; there is no multi-user isolation.
-- Use HTTPS publicly, disable or redact token-bearing access logs, and disable business-response caching.
-- The plugin may display the address in diagnostics or connection dialogs; redact the token before sharing.
-- IP changes do not revoke tokens. Administrators revoke them through reset.
-- Show and reset are available only through the server or container terminal, with no public management endpoint.
-- Expose gateway port `8890`; do not publish internal upstream `127.0.0.1:8891` to the host.
-
-See the [deployment guide](docs/DEPLOYMENT.en.md) for networking and storage.
+Related: [Deployment](docs/DEPLOYMENT.en.md) · [Upgrades and troubleshooting](docs/OPERATIONS.en.md)

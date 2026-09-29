@@ -11,6 +11,8 @@ Zotero PDF2zh -> LAN / HTTPS proxy -> :8890 gateway
 
 认证网关和上游服务端运行在同一容器，由 `scripts/supervise.py` 管理。任一子进程退出则容器结束，Docker 按重启策略恢复。健康检查使用当前令牌访问上游健康接口。
 
+每次启动首次通过认证健康检查后打印当前安全入口。`/_gateway/live` 无需认证，只报告网关存活；完整健康状态通过 `/access/<令牌>/health` 获取。
+
 ## 网关与认证
 
 `gateway/app.py` 使用 Starlette 与 httpx。读取请求体及访问上游前验证令牌，支持查询参数、流式响应、SSE、上游错误转发，并限制体积与超时。
@@ -22,6 +24,8 @@ Zotero PDF2zh -> LAN / HTTPS proxy -> :8890 gateway
 ## 上游与初始化
 
 构建时下载固定 Release 的 `server.zip`，核对 SHA-256 与版本，原版源码保留在 `/app/server`。Python 依赖及基础镜像固定版本与校验值，构建时 warmup 资源。启动包装器禁用上游更新和通知请求。
+
+空宿主机缓存目录会遮住预下载资源；Docker 新建命名卷则会复制镜像目录内容。后续启动使用挂载中校验有效的缓存。
 
 模板保存在挂载目录外的 `/app/defaults/config`。启动前恢复托管 `.example` 文件，再调用上游迁移，保留已有正式配置，支持空宿主机文件夹与命名卷。
 

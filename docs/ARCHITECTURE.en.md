@@ -11,6 +11,8 @@ Zotero PDF2zh -> LAN / HTTPS proxy -> :8890 gateway
 
 The gateway and upstream server run in one container, managed by `scripts/supervise.py`. If either child exits, the container stops and Docker applies its restart policy. Health checks authenticate with the current token and reach the upstream health endpoint.
 
+The first successful authenticated health check per startup prints the current access entry. Unauthenticated `/_gateway/live` reports only gateway liveness; `/access/<token>/health` checks the complete service.
+
 ## Gateway and Authentication
 
 `gateway/app.py` uses Starlette and httpx. Tokens are checked before reading request bodies or contacting upstream. The proxy handles query strings, streaming, SSE and upstream errors, with body-size and timeout limits.
@@ -22,6 +24,8 @@ The upstream destination is fixed to loopback. Hop-by-hop, authentication and fo
 ## Upstream and Initialization
 
 The build downloads a pinned release's `server.zip` and checks its SHA-256 and version. Original server sources remain in `/app/server`. Python dependencies and the base image are pinned and verified, with resource warmup during the build. The startup wrapper disables upstream updates and notice requests.
+
+Empty host cache folders hide preloaded resources; newly created Docker named volumes copy the image directory contents. Subsequent starts reuse valid resources in mounted storage.
 
 Templates live outside mounted storage at `/app/defaults/config`. Startup restores managed `.example` files, then calls upstream migration while preserving active user settings. This supports both empty host folders and named volumes.
 

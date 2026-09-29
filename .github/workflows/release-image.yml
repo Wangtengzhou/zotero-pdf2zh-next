@@ -108,28 +108,23 @@ jobs:
 
           ## 离线镜像 / Offline Docker Image
 
-          下载下方的 `linux-amd64.tar.gz` 镜像附件，然后使用以下命令导入。将 VERSION 替换为本次版本号。
-          NAS 图形化导入窗口若不支持 gzip，先解压为 `.tar`，无需解开 tar 内部文件。
-
-          Download the `linux-amd64.tar.gz` asset below, then import it with:
+          下载下方 `zotero-pdf2zh-next-VERSION-linux-amd64.tar.gz`，在 NAS 镜像管理中导入，或运行：
+          Download `zotero-pdf2zh-next-VERSION-linux-amd64.tar.gz` below and import it in your NAS image manager, or run:
 
           ```bash
           docker load --input zotero-pdf2zh-next-VERSION-linux-amd64.tar.gz
           ```
 
-          Replace VERSION with this release's version. NAS users can decompress it to `.tar` if their image import dialog does not accept gzip.
+          导入窗口若不支持 gzip，先解压为 `.tar`，不要解开 tar 内部文件。GitHub 的 “Source code” 是源码包，不能作为镜像导入。
+          If the importer does not accept gzip, decompress to `.tar` without extracting its contents. GitHub's “Source code” archives cannot be imported as images.
 
-          附件中的 `compose.yaml` 和 `env.example` 用于部署；将 `env.example` 重命名为 `.env`，不需要配置域名环境变量。局域网直连时，将 `BIND_ADDRESS` 设为服务器内网 IP 或 `0.0.0.0`。
-          在容器终端运行 `pdf2zh-admin url show` 获取令牌路径，可接在内网地址或任意 HTTPS 反代域名后。
-          导入后使用 `docker compose up -d --pull never` 启动，无需从 Docker Hub 下载。
-          使用 `SHA256SUMS` 校验下载文件；`IMAGE_INFO.txt` 记录镜像摘要和大小组成。
-          GitHub 自动生成的 “Source code” 下载包是源码，不是 Docker 镜像。
+          部署与升级步骤：[中文指南](https://github.com/Wangtengzhou/zotero-pdf2zh-next/blob/main/docs/DEPLOYMENT.md) · [中文运维](https://github.com/Wangtengzhou/zotero-pdf2zh-next/blob/main/docs/OPERATIONS.md)。
+          Installation and upgrades: [English guide](https://github.com/Wangtengzhou/zotero-pdf2zh-next/blob/main/docs/DEPLOYMENT.en.md) · [Operations](https://github.com/Wangtengzhou/zotero-pdf2zh-next/blob/main/docs/OPERATIONS.en.md).
 
-          `compose.yaml` and `env.example` are included for deployment. Rename `env.example` to `.env`; no domain environment variable is required. For LAN access, set `BIND_ADDRESS` to your server LAN IP or `0.0.0.0`.
-          Run `pdf2zh-admin url show` inside the container to get the token path, and append it to your LAN address or any HTTPS reverse proxy domain.
-          Use `docker compose up -d --pull never` after importing; no Docker Hub download is needed.
-          Verify downloads against `SHA256SUMS`. `IMAGE_INFO.txt` records the source image digest and its size breakdown.
-          GitHub's automatically generated "Source code" downloads contain source files, not a Docker image.
+          附件 / Assets:
+          - `compose.yaml`、`env.example`：部署配置；使用前将 `env.example` 重命名为 `.env`。局域网直连需设置 `BIND_ADDRESS=0.0.0.0`。 / Deployment configuration; rename `env.example` to `.env`. Set `BIND_ADDRESS=0.0.0.0` for LAN access.
+          - `SHA256SUMS`：下载文件校验值。 / Download checksums.
+          - `IMAGE_INFO.txt`：镜像摘要与体积明细。 / Image digest and size breakdown.
           NOTES
           sed -i "s/zotero-pdf2zh-next-VERSION-/zotero-pdf2zh-next-$VERSION-/g" release-notes.md
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then

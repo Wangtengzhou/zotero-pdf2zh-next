@@ -2,7 +2,7 @@
 
 [简体中文](THIRD_PARTY_NOTICES.md) | **English**
 
-This image combines the original Zotero PDF2zh server, official PDFMathTranslate Next and an authentication gateway. It is not the NightWatcher314 fork.
+This image combines the original Zotero PDF2zh server, official PDFMathTranslate Next and this project's authentication gateway.
 
 | Component | Version | Source | License |
 | --- | --- | --- | --- |

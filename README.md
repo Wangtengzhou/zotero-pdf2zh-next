@@ -2,18 +2,18 @@
 
 **简体中文** | [English](README.en.md)
 
-[![Build](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml/badge.svg)](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml)
+[![Build](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml)
 [![Docker Hub](https://img.shields.io/badge/Docker_Hub-wangtengzhou%2Fzotero--pdf2zh--next-2496ED?logo=docker)](https://hub.docker.com/r/wangtengzhou/zotero-pdf2zh-next)
 
 为 [Zotero PDF2zh](https://github.com/guaguastandup/zotero-pdf2zh) 插件提供运行在服务器上的 [PDFMathTranslate Next](https://github.com/PDFMathTranslate/PDFMathTranslate-next) 后端。
 
-本项目是独立维护的容器封装，使用原版 Zotero PDF2zh 服务端和官方 Next 引擎，提供持久化存储及令牌认证。与上游及 NightWatcher314 的同名项目无隶属关系。
+本项目是独立维护的容器封装，使用原版 Zotero PDF2zh 服务端和官方 Next 引擎，提供持久化存储及令牌认证。
 
 ## 功能
 
 - Linux x86_64 Docker 部署，适用于群晖、飞牛等 NAS 和普通服务器。
 - 内网与公网统一使用令牌地址，更换客户端 IP 无需重新认证。
-- 首次启动生成令牌，支持终端查看与热重置；升级保留原令牌。
+- 启动就绪后在日志显示安全入口，支持命令查看与重置；升级保留原令牌。
 - 持久化翻译配置、PDF、字体与模型缓存，支持空配置文件夹初始化。
 - 使用非 root 服务用户、固定上游版本和依赖，不在运行时自动升级。
 - 自动发布 Docker Hub 版本镜像与 GitHub Release 离线镜像包。
@@ -43,13 +43,13 @@
 
 ## 连接 Zotero
 
-在 NAS 容器终端中，以默认 `app` 用户运行：
+启动就绪后，从容器日志复制“安全入口 / Access entry”一行的路径。也可在容器终端以默认 `app` 用户执行：
 
 ```bash
 pdf2zh-admin url show
 ```
 
-命令默认输出 `/access/<令牌>`。将路径接在内网地址或 Lucky 域名后，填入插件的 **Python Server IP**，引擎选择 **pdf2zh_next**，并设置翻译服务商、模型和 API 密钥。
+将 `/access/<令牌>` 接在内网地址或 Lucky 域名后，填入插件的 **Python Server IP**。引擎选择 **pdf2zh_next**，并选中已配置模型和密钥的翻译渠道。
 
 ```text
 http://192.168.1.10:8890/access/<token>
@@ -62,12 +62,13 @@ https://pdf.example.com/access/<token>
 
 面向个人或受信任的小范围使用，所有持有令牌的客户端共享配置与文件，未提供多用户隔离。公网使用 HTTPS，日志及诊断材料需遮蔽令牌和 API 密钥。
 
-上游任务记录保存在内存中，重启后清空；持久化 PDF 保留。浏览器进度面板的路径适配尚未提供。CI 检查启动、认证、CLI、持久化及空目录初始化；实际 PDF 翻译和附件导入需在部署环境确认。
+上游任务记录保存在内存中，重启后清空；持久化 PDF 保留。服务供 Zotero 插件连接使用，不提供适配安全入口的浏览器进度面板。
 
 ## 文档
 
 - [部署指南](docs/DEPLOYMENT.md)
 - [访问与令牌管理](PUBLIC_ACCESS.md)
+- [升级、缓存与排错](docs/OPERATIONS.md)
 - [系统架构](docs/ARCHITECTURE.md)
 - [开发与发布](CONTRIBUTING.md)
 - [更新日志](CHANGELOG.md)

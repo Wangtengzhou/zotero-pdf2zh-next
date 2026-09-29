@@ -2,18 +2,18 @@
 
 [简体中文](README.md) | **English**
 
-[![Build](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml/badge.svg)](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml)
+[![Build](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml)
 [![Docker Hub](https://img.shields.io/badge/Docker_Hub-wangtengzhou%2Fzotero--pdf2zh--next-2496ED?logo=docker)](https://hub.docker.com/r/wangtengzhou/zotero-pdf2zh-next)
 
 A server-hosted [PDFMathTranslate Next](https://github.com/PDFMathTranslate/PDFMathTranslate-next) backend for the [Zotero PDF2zh](https://github.com/guaguastandup/zotero-pdf2zh) plugin.
 
-This independently maintained container packages the original Zotero PDF2zh server and official Next engine with persistent storage and token authentication. It is not affiliated with the upstream projects or NightWatcher314's similarly named project.
+This independently maintained container packages the original Zotero PDF2zh server and official Next engine with persistent storage and token authentication.
 
 ## Features
 
 - Linux x86_64 Docker deployment for Synology, fnOS and other NAS devices or servers.
 - One token-based address for LAN and public access, independent of client IP changes.
-- Automatic token generation, terminal retrieval and live reset; tokens persist across upgrades.
+- Access entry displayed in startup logs, with command-based retrieval and live reset; tokens persist across upgrades.
 - Persistent configuration, PDFs, fonts and model caches; empty configuration folders initialize automatically.
 - Non-root service user, pinned upstream versions and dependencies, and no runtime auto-updates.
 - Automated versioned Docker Hub images and offline archives in GitHub Releases.
@@ -43,13 +43,13 @@ Downloads: [Docker Hub](https://hub.docker.com/r/wangtengzhou/zotero-pdf2zh-next
 
 ## Connect Zotero
 
-In the NAS container console, run as the default `app` user:
+Once ready, copy the path from the “安全入口 / Access entry” startup log line. Alternatively, run in the container console as the default `app` user:
 
 ```bash
 pdf2zh-admin url show
 ```
 
-By default, this prints `/access/<token>`. Append the path to a LAN address or Lucky domain, enter the complete URL in the plugin's **Python Server IP**, select **pdf2zh_next**, and configure your translation provider, model and API key.
+Append `/access/<token>` to a LAN address or Lucky domain, enter the complete URL in the plugin's **Python Server IP**, select **pdf2zh_next**, and select your configured translation channel with its model and API key.
 
 ```text
 http://192.168.1.10:8890/access/<token>
@@ -62,12 +62,13 @@ No domain is required in the container configuration. Multiple proxy domains can
 
 Designed for personal or trusted small-group use. Token holders share configuration and files; there is no multi-user isolation. Use HTTPS for public access and redact tokens and API keys from logs and diagnostics.
 
-Upstream task history is held in memory and cleared on restart; persisted PDFs remain. Browser progress-panel path adaptation is not provided. CI checks startup, authentication, CLI commands, persistence and empty-folder initialization. Confirm actual PDF translation and attachment import in your deployment environment.
+Upstream task history is held in memory and cleared on restart; persisted PDFs remain. The service is intended for the Zotero plugin and does not provide a browser progress panel adapted to the token entry.
 
 ## Documentation
 
 - [Deployment guide](docs/DEPLOYMENT.en.md)
 - [Access and token management](PUBLIC_ACCESS.en.md)
+- [Upgrades, cache and troubleshooting](docs/OPERATIONS.en.md)
 - [Architecture](docs/ARCHITECTURE.en.md)
 - [Development and releases](CONTRIBUTING.en.md)
 - [Changelog](CHANGELOG.en.md)

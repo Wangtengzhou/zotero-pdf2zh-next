@@ -40,6 +40,8 @@ Gateway development dependencies use `requirements-gateway.in` and `.lock`. For 
 
 Every documentation page has a Chinese primary file and an English `.en.md` counterpart. Keep content, commands and language links synchronized. Do not rewrite original license texts.
 
+Keep installation and connection steps in the deployment guide, upgrades and troubleshooting in the operations guide, and token management in the access guide. Release notes describe user-facing changes, compatibility and downloads, not task progress or test counts. When editing historical releases, preserve tags and assets.
+
 ## Automated Releases
 
 ### Maintaining Upstream Updates
@@ -48,7 +50,15 @@ An upstream release does not change existing images or running containers. For s
 
 `Build, Check and Publish`:
 
-- `main`, Pull Requests and manual runs check images without publishing.
+| Trigger | Work performed |
+| --- | --- |
+| Markdown or license changes only | No workflow run |
+| Code pushed to `main` | Core checks |
+| Pull Request or manual run | Core checks, image build and container checks; no publishing |
+| `v*` tag | Full checks, image publication and offline assets |
+
+When a commit and release tag are pushed together, only the tag run builds the image.
+
 - A `v*` Git tag publishes the same tested image only after checks pass.
 - The tag must match the container version in `versions.json`. Existing versions cannot be overwritten; fixes need a new version.
 - Docker Hub publishes `:<version>` only, without `sha-…` or `latest`.

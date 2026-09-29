@@ -2,7 +2,7 @@
 
 **简体中文** | [English](THIRD_PARTY_NOTICES.en.md)
 
-本镜像组合原版 Zotero PDF2zh 服务端、官方 PDFMathTranslate Next 与认证网关，不是 NightWatcher314 的分支版本。
+本镜像组合原版 Zotero PDF2zh 服务端、官方 PDFMathTranslate Next 与本项目的认证网关。
 
 | 组件 | 版本 | 源码 | 许可证 |
 | --- | --- | --- | --- |
