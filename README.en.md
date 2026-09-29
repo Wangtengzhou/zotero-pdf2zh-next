@@ -22,7 +22,7 @@ This independently maintained container packages the original Zotero PDF2zh serv
 
 | Component | Version |
 | --- | --- |
-| Container image | `0.1.2` |
+| Container image | `0.1.3` |
 | Zotero PDF2zh server | `4.1.7` |
 | PDFMathTranslate Next | `2.9.0` |
 | BabelDOC | `0.6.2` |
@@ -37,7 +37,7 @@ Two deployment methods are documented:
 1. [Synology / fnOS graphical deployment](docs/DEPLOYMENT.en.md#method-1-synology--fnos-graphical-deployment): configure the image, ports and folders in your NAS container manager, with optional offline import.
 2. [Docker Compose with one command block](docs/DEPLOYMENT.en.md#method-2-docker-compose): paste the block to create volumes, pull the image and start the service, without manual folder mapping.
 
-Image: `wangtengzhou/zotero-pdf2zh-next:0.1.2`. Docker Hub publishes version tags only, with no `sha-…` or `latest` tags.
+Image: `wangtengzhou/zotero-pdf2zh-next:0.1.3`. Docker Hub publishes version tags only, with no `sha-…` or `latest` tags.
 
 Downloads: [Docker Hub](https://hub.docker.com/r/wangtengzhou/zotero-pdf2zh-next) · [GitHub offline images](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases). GitHub's **Source code** archives are not Docker images.
 

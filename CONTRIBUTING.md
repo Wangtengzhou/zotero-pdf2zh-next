@@ -42,6 +42,10 @@ uv pip compile requirements.in \
 
 ## 自动发布
 
+### 上游升级的维护流程
+
+上游发布不会自动修改现有镜像或运行中的容器。服务端升级时更新 `versions.json` 中的服务端版本、下载地址与 SHA256；Next／BabelDOC 升级时同步修改版本记录和依赖约束，并重新生成锁文件。核对上游配置迁移和插件兼容性，更新容器版本、测试中的版本断言及双语更新日志，执行核心检查和真实容器启动检查，通过后发布新的 `vX.Y.Z` 标签。GitHub Actions 构建并上传版本镜像和离线附件；NAS 用户再更换镜像。不要覆盖已经发布的版本标签。
+
 `Build, Check and Publish`：
 
 - `main`、Pull Request 和手动运行执行检查，不发布镜像。

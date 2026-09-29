@@ -27,14 +27,14 @@
 
 群晖打开 **Container Manager**（旧版 DSM 为 Docker）；飞牛打开 Docker 应用。不同版本的菜单名称可能不同。
 
-在线方式：在镜像仓库搜索 `wangtengzhou/zotero-pdf2zh-next`，选择版本 `0.1.2` 并下载。
+在线方式：在镜像仓库搜索 `wangtengzhou/zotero-pdf2zh-next`，选择版本 `0.1.3` 并下载。
 
 离线方式：
 
-1. 从 [GitHub Releases](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases) 下载 `zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz`。
+1. 从 [GitHub Releases](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases) 下载 `zotero-pdf2zh-next-0.1.3-linux-amd64.tar.gz`。
 2. 上传到 NAS，在镜像页面选择 **导入／从文件导入**。
 3. 若仅支持 `.tar`，先解压一层得到 `.tar` 再导入，不要解开 `.tar` 内部文件。
-4. 确认本地镜像名称为 `wangtengzhou/zotero-pdf2zh-next:0.1.2`，创建时关闭强制拉取。
+4. 确认本地镜像名称为 `wangtengzhou/zotero-pdf2zh-next:0.1.3`，创建时关闭强制拉取。
 
 GitHub 自动生成的 **Source code** 包不能作为镜像导入。下载可与 Release 中的 `SHA256SUMS` 对照校验。
 
@@ -81,7 +81,7 @@ sudo chmod 700 "$PDF2ZH_STORAGE/auth"
 
 | 项目 | 配置 |
 | --- | --- |
-| 镜像 | `wangtengzhou/zotero-pdf2zh-next:0.1.2` |
+| 镜像 | `wangtengzhou/zotero-pdf2zh-next:0.1.3` |
 | 容器名称 | `zotero-pdf2zh-next` |
 | 网络 | 默认 bridge |
 | 端口 | 宿主机 `8890` → 容器 `8890`，TCP |
@@ -104,6 +104,8 @@ sudo chmod 700 "$PDF2ZH_STORAGE/auth"
 配置模板会自动补齐，已有正式配置保留并交给上游迁移。空缓存文件夹会遮住镜像内预下载的资源，翻译时可能需要重新下载。
 
 ### 4. 获取地址
+
+从 `0.1.3` 起，首次成功启动后，容器日志会直接显示“安全入口 / Access entry”。复制该行的 `/access/…` 路径即可；每次重启也会打印。重置令牌后用命令查看最新值，不要复制历史日志中的旧入口。详细步骤见 [安全入口管理](../PUBLIC_ACCESS.md)。
 
 启动容器，查看健康状态与日志。打开容器终端，选择 `/bin/sh`，用户为默认 `app`（UID `10001`）：
 
@@ -139,7 +141,7 @@ sudo docker compose version
 cat > compose.yaml <<'YAML'
 services:
   pdf2zh:
-    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.2}
+    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.3}
     platform: linux/amd64
     container_name: zotero-pdf2zh-next
     restart: unless-stopped
@@ -161,7 +163,7 @@ volumes:
   translated:
   cache:
 YAML
-printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.2' 'BIND_ADDRESS=0.0.0.0' > .env
+printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.3' 'BIND_ADDRESS=0.0.0.0' > .env
 sudo docker compose pull
 sudo docker compose up -d --wait --wait-timeout 180
 sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
@@ -178,19 +180,19 @@ sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
 
 ### Compose 离线导入
 
-如果 Docker Hub 下载失败，使用这个替代步骤。打开 [0.1.2 下载页](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases/tag/v0.1.2)，下载 `zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz`，上传到 NAS 文件管理器可见的目录。在 NAS 终端输入 `cd `（后面有一个空格），再填入该目录完整路径，回车进入，然后执行：
+如果 Docker Hub 下载失败，使用这个替代步骤。打开 [0.1.3 下载页](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases/tag/v0.1.3)，下载 `zotero-pdf2zh-next-0.1.3-linux-amd64.tar.gz`，上传到 NAS 文件管理器可见的目录。在 NAS 终端输入 `cd `（后面有一个空格），再填入该目录完整路径，回车进入，然后执行：
 
 ```bash
 (
 set -e
-sudo docker load --input zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz
+sudo docker load --input zotero-pdf2zh-next-0.1.3-linux-amd64.tar.gz
 mkdir -p "$HOME/zotero-pdf2zh-next"
 cd "$HOME/zotero-pdf2zh-next"
 if [ ! -f compose.yaml ]; then
 cat > compose.yaml <<'YAML'
 services:
   pdf2zh:
-    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.2}
+    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.3}
     platform: linux/amd64
     container_name: zotero-pdf2zh-next
     restart: unless-stopped
@@ -214,7 +216,7 @@ volumes:
 YAML
 fi
 if [ ! -f .env ]; then
-  printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.2' 'BIND_ADDRESS=0.0.0.0' > .env
+  printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.3' 'BIND_ADDRESS=0.0.0.0' > .env
 fi
 sudo docker compose up -d --pull never --wait --wait-timeout 180
 sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
@@ -254,6 +256,12 @@ Lucky 若在容器中运行，其回环地址不指向 PDF2zh 容器。可将两
 
 ## 令牌与升级
 
+### 重启与缓存
+
+只要保留同一个 `cache` 文件夹或数据卷，已下载且校验通过的模型、字体就可以继续使用，普通重启不会清空缓存。换镜像时也保留该挂载；新版需要不同资源或缓存缺失、损坏时才需补下载。复用缓存不代表后续翻译完全不需要网络，LLM 请求仍需访问所选服务商。
+
+### 查看或更换安全入口
+
 容器终端中执行：
 
 ```bash
@@ -265,9 +273,18 @@ pdf2zh-admin token reset
 
 使用默认 `app` 用户。若图形终端固定为 root，在 NAS 终端使用 `docker exec zotero-pdf2zh-next pdf2zh-admin token reset`，避免 root 创建服务用户无法读取的令牌文件。详情见 [令牌管理](../PUBLIC_ACCESS.md)。
 
-升级前等待翻译结束，备份四个持久化位置。图形化管理器导入／下载新版本，在原容器的更新功能中更换镜像，保留所有挂载；Compose 修改 `.env` 的版本后重新拉取并启动，离线导入后使用 `--pull never`。
+### 容器升级：换镜像，保留数据
 
-按本文 Compose 命令安装的用户，用文本编辑器打开 `~/zotero-pdf2zh-next/.env`，把第一行末尾的 `0.1.2` 改成要升级到的已发布版本，保存后在 NAS 终端执行：
+上游 PDF2zh 服务端、PDFMathTranslate Next 和本项目镜像各有自己的版本号。上游发布新版后，本项目维护者更新版本与依赖，检查兼容性，再通过 GitHub Actions 发布新的版本镜像。当前没有自动跟随上游升级的定时流程。
+
+NAS 用户只需更新本项目镜像；不要在容器里执行 `pip install -U`、`git pull` 或上游自更新命令。这类改动没有经过本项目兼容检查，重建容器后也不会保留。
+
+1. 等正在翻译的任务完成，备份 `auth`、`config`、`translated`、`cache` 四个存储位置。
+2. 在本项目 Release 确认新镜像版本及变更说明。图形化用户下载或导入新镜像，在原容器的更新／重新创建功能中选择新版本，保留原端口和四行目录映射，不勾选删除数据。
+3. 启动后等待健康状态正常，用原安全入口测试连接，再翻译一篇短 PDF。保留 `auth` 挂载时令牌不变，不需要重新配置 Lucky。
+4. Compose 用户按下方命令更新；使用不同安装目录的用户，将第一行换成原来保存 `compose.yaml` 的目录。始终使用原 Compose 项目和原数据卷。
+
+按本文 Compose 命令安装的用户，用文本编辑器打开 `~/zotero-pdf2zh-next/.env`，把第一行末尾的 `0.1.3` 改成要升级到的已发布版本，保存后在 NAS 终端执行：
 
 ```bash
 cd "$HOME/zotero-pdf2zh-next"
@@ -284,7 +301,7 @@ sudo docker compose up -d --wait --wait-timeout 180
 | 现象 | 处理 |
 | --- | --- |
 | 令牌目录不可写 | 检查读写挂载、UID 10001 的目录及已有文件权限；先修权限，不删除令牌 |
-| `0.1.0` 提示缺少配置文件及模板 | 使用 `0.1.2`，它会自动恢复模板 |
+| `0.1.0` 提示缺少配置文件及模板 | 使用 `0.1.3`，它会自动恢复模板 |
 | Lucky 502 | 检查后端地址与健康状态；容器中的 `127.0.0.1` 指向容器自己 |
 | 大 PDF 上传失败 | 检查反代与网关限制，Base64 编码后体积约增加 1/3 |
 | 翻译失败或超时 | 检查服务商密钥、模型、网络及超时；反馈日志前遮蔽凭据 |

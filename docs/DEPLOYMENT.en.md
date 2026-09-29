@@ -25,14 +25,14 @@ Allow time and disk space for the first download or import. Wait for the contain
 
 Open **Container Manager** on Synology (Docker on older DSM versions), or the Docker application on fnOS. Menu names vary by version.
 
-Online: search for `wangtengzhou/zotero-pdf2zh-next` in the image registry, select `0.1.2`, and download it.
+Online: search for `wangtengzhou/zotero-pdf2zh-next` in the image registry, select `0.1.3`, and download it.
 
 Offline:
 
-1. Download `zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz` from [GitHub Releases](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases).
+1. Download `zotero-pdf2zh-next-0.1.3-linux-amd64.tar.gz` from [GitHub Releases](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases).
 2. Upload it to your NAS and select **Import / Import from file** on the image page.
 3. If the dialog accepts only `.tar`, decompress the gzip file once to obtain `.tar`. Do not extract the files inside the tar archive.
-4. Confirm the local image is named `wangtengzhou/zotero-pdf2zh-next:0.1.2` and disable forced pulling when creating the container.
+4. Confirm the local image is named `wangtengzhou/zotero-pdf2zh-next:0.1.3` and disable forced pulling when creating the container.
 
 GitHub's automatically generated **Source code** archives are not images. Compare downloaded files with the release's `SHA256SUMS` if needed.
 
@@ -79,7 +79,7 @@ Select the local image and create a container with these settings:
 
 | Setting | Value |
 | --- | --- |
-| Image | `wangtengzhou/zotero-pdf2zh-next:0.1.2` |
+| Image | `wangtengzhou/zotero-pdf2zh-next:0.1.3` |
 | Container name | `zotero-pdf2zh-next` |
 | Network | Default bridge |
 | Port | Host `8890` to container `8890`, TCP |
@@ -102,6 +102,8 @@ On the storage page, click **Add** four times and fill in the Synology or fnOS m
 Configuration templates are restored automatically; existing active settings are passed to upstream migration. An empty cache folder hides preloaded image resources, which may need to be downloaded again during translation.
 
 ### 4. Retrieve the Address
+
+Starting with `0.1.3`, successful startup prints “安全入口 / Access entry” in the container log. Copy the `/access/…` path from that line. Each restart prints it again. After resetting a token, use the command to retrieve the current entry rather than copying an older log entry. See [access management](../PUBLIC_ACCESS.en.md).
 
 Start the container and check its health and logs. Open the console with `/bin/sh`, using the default `app` user (UID `10001`):
 
@@ -137,7 +139,7 @@ sudo docker compose version
 cat > compose.yaml <<'YAML'
 services:
   pdf2zh:
-    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.2}
+    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.3}
     platform: linux/amd64
     container_name: zotero-pdf2zh-next
     restart: unless-stopped
@@ -159,7 +161,7 @@ volumes:
   translated:
   cache:
 YAML
-printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.2' 'BIND_ADDRESS=0.0.0.0' > .env
+printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.3' 'BIND_ADDRESS=0.0.0.0' > .env
 sudo docker compose pull
 sudo docker compose up -d --wait --wait-timeout 180
 sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
@@ -176,19 +178,19 @@ Append the complete `/access/…` output to `http://YOUR-NAS-IP:8890`. Enter tha
 
 ### Offline Compose Import
 
-If Docker Hub downloads fail, use this alternative. Download `zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz` from the [0.1.2 release](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases/tag/v0.1.2) and upload it to a NAS folder. In the NAS terminal, type `cd ` followed by that folder's full path and press Enter. Then run:
+If Docker Hub downloads fail, use this alternative. Download `zotero-pdf2zh-next-0.1.3-linux-amd64.tar.gz` from the [0.1.3 release](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases/tag/v0.1.3) and upload it to a NAS folder. In the NAS terminal, type `cd ` followed by that folder's full path and press Enter. Then run:
 
 ```bash
 (
 set -e
-sudo docker load --input zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz
+sudo docker load --input zotero-pdf2zh-next-0.1.3-linux-amd64.tar.gz
 mkdir -p "$HOME/zotero-pdf2zh-next"
 cd "$HOME/zotero-pdf2zh-next"
 if [ ! -f compose.yaml ]; then
 cat > compose.yaml <<'YAML'
 services:
   pdf2zh:
-    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.2}
+    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.3}
     platform: linux/amd64
     container_name: zotero-pdf2zh-next
     restart: unless-stopped
@@ -212,7 +214,7 @@ volumes:
 YAML
 fi
 if [ ! -f .env ]; then
-  printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.2' 'BIND_ADDRESS=0.0.0.0' > .env
+  printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.3' 'BIND_ADDRESS=0.0.0.0' > .env
 fi
 sudo docker compose up -d --pull never --wait --wait-timeout 180
 sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
@@ -250,6 +252,12 @@ Multiple proxy domains can use the same token without changing the container. En
 
 ## Tokens and Upgrades
 
+### Restarts and Cache
+
+Retain the same `cache` folder or volume to reuse downloaded models and fonts that pass validation. Ordinary restarts do not clear it. Keep that mount when replacing the image too. New versions may require different resources; missing or damaged files must be downloaded again. Cached resources do not remove the need for network access to your LLM provider.
+
+### Retrieve or Reset the Entry
+
 Run in the container console:
 
 ```bash
@@ -261,9 +269,18 @@ pdf2zh-admin token reset
 
 Use the default `app` user. If the graphical console forces root, run `docker exec zotero-pdf2zh-next pdf2zh-admin token reset` from the NAS terminal to avoid creating token files unreadable by the service user. See [token management](../PUBLIC_ACCESS.en.md).
 
-Before upgrading, let translations finish and back up all four storage locations. In the graphical manager, import or download the new version and update the original container while retaining all mounts. With Compose, change the version in `.env`, pull and start again; use `--pull never` after offline import.
+### Upgrade the Image and Keep Your Data
 
-If installed with this guide's Compose commands, open `~/zotero-pdf2zh-next/.env` in a text editor, replace `0.1.2` at the end of the first line with the desired published version, and save. Run on the NAS:
+The upstream PDF2zh server, PDFMathTranslate Next and this container have separate version numbers. When upstream publishes an update, this project's maintainer updates the pinned versions and dependencies, checks compatibility, and publishes a new image through GitHub Actions. There is currently no scheduled workflow that automatically follows upstream releases.
+
+NAS users update this project's image. Do not run `pip install -U`, `git pull` or upstream self-update commands inside the container: those changes bypass compatibility checks and do not survive container recreation.
+
+1. Finish active translations and back up `auth`, `config`, `translated` and `cache`.
+2. Check this project's Release for the new image version and changes. In the graphical manager, download/import the new image and use the original container's update/recreate function. Select the new version, retain the port and all four mappings, and do not select any delete-data option.
+3. Wait for healthy status, test the existing entry and translate a short PDF. Keeping the `auth` mount preserves the token; Lucky needs no reconfiguration.
+4. Compose users can follow the commands below. If installed elsewhere, replace the first line with the original directory containing `compose.yaml`. Keep the original Compose project and volumes.
+
+If installed with this guide's Compose commands, open `~/zotero-pdf2zh-next/.env` in a text editor, replace `0.1.3` at the end of the first line with the desired published version, and save. Run on the NAS:
 
 ```bash
 cd "$HOME/zotero-pdf2zh-next"
@@ -280,7 +297,7 @@ To roll back, select the old version and restore its configuration backup if the
 | Symptom | Action |
 | --- | --- |
 | Token directory is unwritable | Check read-write mounts and UID 10001 access to folders and existing files; fix permissions before changing the token |
-| `0.1.0` reports missing configuration and templates | Use `0.1.2`, which restores templates automatically |
+| `0.1.0` reports missing configuration and templates | Use `0.1.3`, which restores templates automatically |
 | Lucky returns 502 | Check the backend address and health; container loopback points to that container itself |
 | Large PDF upload fails | Check gateway and proxy limits; Base64 increases size by roughly one third |
 | Translation fails or times out | Check provider credentials, model, network and timeouts; redact credentials before sharing logs |

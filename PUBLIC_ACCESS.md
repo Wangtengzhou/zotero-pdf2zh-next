@@ -13,7 +13,33 @@ https://pdf.example.com/access/<token>
 
 反代保留完整路径与查询参数。网关验证后剥离令牌前缀，转发到内部服务端，所有业务接口均受保护。多个域名可使用同一个令牌。
 
-## 查看路径和令牌
+## 第一次获取安全入口
+
+从 `0.1.3` 起，打开容器的“日志”，等待出现“服务已就绪 / Service ready”。其下一行会显示：
+
+```text
+安全入口 / Access entry: /access/你的完整令牌
+```
+
+把 `/access/` 开头的整段接到 `http://你的NAS内网IP:8890` 或 `https://你的反代域名` 后，在 Zotero 的 **Python Server IP** 中填写完整地址，不加 `/health`，末尾不加 `/`。多个域名可以复用同一段路径。
+
+每次启动通过完整健康检查后打印一次，重启使用原令牌，不会自动换令牌。如果设置了可选的 `PUBLIC_BASE_URL`，日志直接显示完整地址；不设置也能使用。`0.1.2` 及更早版本使用下面的命令获取。
+
+## 之后再次查看
+
+容器页面打开“终端”，选择“新建终端／执行命令”，启动命令填 `/bin/sh`，保留默认 `app` 用户。连接后只需执行这一条：
+
+```bash
+pdf2zh-admin url show
+```
+
+如果是在 NAS 系统终端／SSH，使用这一条：
+
+```bash
+sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
+```
+
+### 可选：只看令牌或生成完整地址
 
 容器内部终端以默认 `app` 用户（UID `10001`）执行：
 
@@ -28,8 +54,16 @@ pdf2zh-admin url show --base-url https://pdf.example.com
 
 ## 重置
 
+等待正在翻译的任务完成。在容器终端执行以下命令，生成并显示新的安全入口：
+
 ```bash
-docker exec zotero-pdf2zh-next pdf2zh-admin token reset
+pdf2zh-admin token reset
+```
+
+如果是在 NAS 系统终端／SSH，使用：
+
+```bash
+sudo docker exec zotero-pdf2zh-next pdf2zh-admin token reset
 ```
 
 无需重启容器，命令显示新路径或地址。之后更新 Zotero 地址，旧令牌对新请求立即失效；已经授权的请求和流式响应可以完成。也可使用 `--base-url https://pdf.example.com` 显示指定域名的完整地址。
@@ -42,7 +76,7 @@ docker exec zotero-pdf2zh-next pdf2zh-admin token reset
 
 文件损坏、格式非法或无法读写时拒绝服务，不静默生成替代凭据。查看命令只读，重置通过文件锁与原子替换更新文件。
 
-启动日志只显示管理命令，不输出令牌。管理员主动执行查看或重置时，凭据显示在终端；终端录制或审计仍可能保存输出。
+启动日志会包含安全入口，导出日志给他人前遮蔽令牌。重置后，旧日志仍保留旧入口；以查看命令输出的当前值为准。管理员主动执行查看或重置时，凭据也显示在终端。
 
 ## 使用边界
 

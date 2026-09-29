@@ -1,9 +1,12 @@
 import json
+import io
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from unittest.mock import patch
 from pathlib import Path
 
 import httpx
@@ -12,6 +15,7 @@ from starlette.testclient import TestClient
 from gateway import tokens
 from gateway.app import create_app
 from scripts.config_bootstrap import TEMPLATES, seed_config_templates
+from scripts.supervise import announce_ready
 
 
 class CoreTests(unittest.TestCase):
@@ -21,6 +25,28 @@ class CoreTests(unittest.TestCase):
 
     def tearDown(self):
         self.temporary.cleanup()
+
+    def test_entry_announced_only_when_authenticated_service_is_ready(self):
+        token = tokens.initialize(self.directory)
+        env = {"GATEWAY_STATE_DIR": str(self.directory), "PUBLIC_BASE_URL": ""}
+        output = io.StringIO()
+        with patch.dict(os.environ, env), redirect_stdout(output):
+            with patch("scripts.supervise.urllib.request.urlopen", side_effect=OSError):
+                self.assertFalse(announce_ready())
+            self.assertEqual(output.getvalue(), "")
+            with patch("scripts.supervise.urllib.request.urlopen", return_value=io.BytesIO(b'{"status":"ok"}')) as request:
+                self.assertTrue(announce_ready())
+                self.assertEqual(request.call_args.args[0], f"http://127.0.0.1:8890/access/{token}/health")
+            self.assertIn(f"Access entry: /access/{token}", output.getvalue())
+            output.seek(0)
+            output.truncate()
+            replacement = tokens.reset(self.directory)
+            with patch.dict(os.environ, {"PUBLIC_BASE_URL": "https://pdf.example.com"}), patch(
+                "scripts.supervise.urllib.request.urlopen", return_value=io.BytesIO(b'{"status":"ok"}')
+            ):
+                self.assertTrue(announce_ready())
+            self.assertIn(f"https://pdf.example.com/access/{replacement}", output.getvalue())
+            self.assertNotIn(token, output.getvalue())
 
     def test_config_templates_on_empty_mount_preserve_active_config(self):
         defaults = self.directory / "defaults"

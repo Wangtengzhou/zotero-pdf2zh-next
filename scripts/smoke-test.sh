@@ -20,7 +20,8 @@ docker run -d --name "$container" --mount "type=volume,src=$state,dst=/app/gatew
 
 wait_ready() {
   for ((attempt=0; attempt<60; attempt++)); do
-    if docker exec "$container" python /app/scripts/healthcheck.py >/dev/null 2>&1; then
+    if docker exec "$container" python /app/scripts/healthcheck.py >/dev/null 2>&1 \
+      && docker logs "$container" 2>&1 | grep -F '安全入口 / Access entry:' >/dev/null; then
       return
     fi
     if [[ "$(docker inspect --format '{{.State.Running}}' "$container")" != true ]]; then

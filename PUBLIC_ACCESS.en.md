@@ -13,7 +13,33 @@ https://pdf.example.com/access/<token>
 
 The proxy must preserve the full path and query string. After validation, the gateway strips the token prefix and forwards to the internal server. All business endpoints are protected. Multiple domains can use the same token.
 
-## Retrieve the Path and Token
+## Get Your Entry for the First Time
+
+Starting with `0.1.3`, open the container logs and wait for “服务已就绪 / Service ready”. The next line shows:
+
+```text
+安全入口 / Access entry: /access/YOUR-FULL-TOKEN
+```
+
+Append the entire `/access/…` path to `http://YOUR-NAS-IP:8890` or `https://YOUR-PROXY-DOMAIN`. Enter the complete address in Zotero's **Python Server IP**, without `/health` or a trailing slash. Multiple domains can reuse the same path.
+
+The entry is printed once per startup after the authenticated health check succeeds. Restarts reuse the existing token. Optional `PUBLIC_BASE_URL` makes the log show a full URL; it is not required. On `0.1.2` and earlier, use the commands below.
+
+## Retrieve the Current Entry Later
+
+Open the container's terminal, select “New terminal / Execute command”, enter `/bin/sh`, and keep the default `app` user. Run:
+
+```bash
+pdf2zh-admin url show
+```
+
+From the NAS system terminal or SSH, run instead:
+
+```bash
+sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
+```
+
+### Optional: Show Only the Token or a Full URL
 
 Run in the container console as the default `app` user (UID `10001`):
 
@@ -28,8 +54,16 @@ From the server terminal, prefix commands with `docker exec zotero-pdf2zh-next`.
 
 ## Reset
 
+Let active translations finish. In the container console, run this to generate and display a new entry:
+
 ```bash
-docker exec zotero-pdf2zh-next pdf2zh-admin token reset
+pdf2zh-admin token reset
+```
+
+From the NAS system terminal or SSH, run instead:
+
+```bash
+sudo docker exec zotero-pdf2zh-next pdf2zh-admin token reset
 ```
 
 No restart is required. The command displays the new path or address. Update Zotero afterward: the old token is rejected for new requests, while previously authorized requests and streams can finish. Add `--base-url https://pdf.example.com` to display a full URL for that domain.
@@ -42,7 +76,7 @@ First startup generates a token at `/app/gateway/state/auth.json`. Restarts, con
 
 Corrupt, invalid or inaccessible files cause service failure rather than silent credential replacement. Show commands are read-only; reset uses a file lock and atomic replacement.
 
-Startup logs show management commands, not the token. Explicit show or reset commands print credentials in the terminal; recordings or audit systems may retain that output.
+Startup logs contain the access entry; redact the token before sharing logs. After a reset, historical logs still contain the old entry, so use the show command for the current value. Explicit show and reset commands also print credentials in the terminal.
 
 ## Access Boundaries
 

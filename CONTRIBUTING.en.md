@@ -42,6 +42,10 @@ Every documentation page has a Chinese primary file and an English `.en.md` coun
 
 ## Automated Releases
 
+### Maintaining Upstream Updates
+
+An upstream release does not change existing images or running containers. For server updates, update the server version, download URL and SHA256 in `versions.json`. For Next/BabelDOC updates, synchronize version records and dependency constraints and regenerate the lock file. Review configuration migrations and plugin compatibility, update the container version, version assertions and bilingual changelogs, and run core and real-container startup checks. Then publish a new `vX.Y.Z` tag. GitHub Actions builds and uploads the versioned image and offline archive; NAS users replace their image afterward. Never overwrite a published version tag.
+
 `Build, Check and Publish`:
 
 - `main`, Pull Requests and manual runs check images without publishing.

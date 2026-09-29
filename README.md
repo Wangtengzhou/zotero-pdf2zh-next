@@ -22,7 +22,7 @@
 
 | 组件 | 版本 |
 | --- | --- |
-| 容器镜像 | `0.1.2` |
+| 容器镜像 | `0.1.3` |
 | Zotero PDF2zh 服务端 | `4.1.7` |
 | PDFMathTranslate Next | `2.9.0` |
 | BabelDOC | `0.6.2` |
@@ -37,7 +37,7 @@
 1. [群晖／飞牛图形化部署](docs/DEPLOYMENT.md#方式一群晖飞牛图形化部署)：在 NAS 容器管理器中配置镜像、端口和文件夹，可导入 GitHub 离线镜像。
 2. [Docker Compose 一段命令部署](docs/DEPLOYMENT.md#方式二docker-compose)：复制整段命令，自动创建数据卷、拉取镜像并启动，无需手工映射目录。
 
-镜像地址：`wangtengzhou/zotero-pdf2zh-next:0.1.2`。Docker Hub 只发布版本号标签，不提供 `sha-…` 或 `latest` 标签。
+镜像地址：`wangtengzhou/zotero-pdf2zh-next:0.1.3`。Docker Hub 只发布版本号标签，不提供 `sha-…` 或 `latest` 标签。
 
 下载入口：[Docker Hub](https://hub.docker.com/r/wangtengzhou/zotero-pdf2zh-next) · [GitHub 离线镜像](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases)。GitHub 的 **Source code** 附件是源码，不能作为镜像导入。
 

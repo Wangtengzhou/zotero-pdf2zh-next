@@ -1,6 +1,6 @@
 services:
   pdf2zh:
-    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.2}
+    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.3}
     platform: linux/amd64
     container_name: zotero-pdf2zh-next
     restart: unless-stopped

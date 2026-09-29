@@ -2,8 +2,9 @@
 
 [简体中文](CHANGELOG.md) | **English**
 
-## Unreleased
+## 0.1.3 - 2026-09-29
 
+- Print the current access entry once per startup after the authenticated health check succeeds; document retrieval, reset, cache reuse and image upgrades.
 - Add complete Synology/fnOS folder mapping tables and copy-and-run online/offline Compose installation blocks.
 - Require Chinese and English changelog entries before new releases and generate bilingual Release notes.
 - Provide paired Chinese and English pages for all documentation.
