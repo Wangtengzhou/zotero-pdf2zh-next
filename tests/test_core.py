@@ -84,10 +84,14 @@ class CoreTests(unittest.TestCase):
 
         self.assertEqual(run("token", "show"), original)
         self.assertEqual(run("url", "show"), f"https://pdf.example.com/access/{original}")
+        env.pop("PUBLIC_BASE_URL")
+        self.assertEqual(run("url", "show"), f"/access/{original}")
+        self.assertEqual(run("url", "show", "--base-url", "http://192.168.1.10:8890"), f"http://192.168.1.10:8890/access/{original}")
+        self.assertEqual(run("url", "show", "--base-url", "https://another.example.com"), f"https://another.example.com/access/{original}")
         result = run("token", "reset")
         replacement = tokens.current(self.directory)
         self.assertNotEqual(original, replacement)
-        self.assertIn(f"https://pdf.example.com/access/{replacement}", result)
+        self.assertIn(f"/access/{replacement}", result)
 
     def test_upload_limit_and_upstream_error(self):
         os.environ["MAX_UPLOAD_MB"] = "1"

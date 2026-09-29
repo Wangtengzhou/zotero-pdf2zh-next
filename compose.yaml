@@ -1,13 +1,13 @@
 services:
   pdf2zh:
-    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.1}
+    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.2}
     platform: linux/amd64
     container_name: zotero-pdf2zh-next
     restart: unless-stopped
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${HOST_PORT:-8890}:8890"
     environment:
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set PUBLIC_BASE_URL in .env}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
       UPSTREAM_TIMEOUT_SECONDS: ${UPSTREAM_TIMEOUT_SECONDS:-3600}
       TZ: ${TZ:-Asia/Shanghai}

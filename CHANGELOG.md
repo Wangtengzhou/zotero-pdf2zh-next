@@ -1,6 +1,22 @@
 # Changelog
 
+## 0.1.2 - 2026-09-29
+
+### Fixes
+
+- Initialize managed configuration templates for empty host-folder mounts while preserving active user configuration.
+- Make PUBLIC_BASE_URL optional. Use a reusable token path for both LAN and public access, with no domain binding.
+- Add --base-url to URL display and token reset commands to generate a full HTTP(S) URL for any chosen address without recreating the container.
+- Improve token storage diagnostics to distinguish mount permission failures from invalid token content.
+
+### Validation
+
+- Five focused core tests include empty-config initialization, active-config preservation, and URL display with no configured domain or multiple addresses.
+- Container checks cover both named-volume persistence and startup with four empty host-folder mounts without a domain environment variable.
+
 ## 0.1.1 - 2026-09-29
+
+Publication canceled before uploading images; the fixes are included in 0.1.2.
 
 ### Fixes
 

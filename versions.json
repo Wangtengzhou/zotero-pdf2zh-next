@@ -1,5 +1,5 @@
 {
-  "container": "0.1.1",
+  "container": "0.1.2",
   "server": "4.1.7",
   "server_url": "https://github.com/guaguastandup/zotero-pdf2zh/releases/download/v4.1.7/server.zip",
   "server_sha256": "118c7f37844ebeb67f7c9f018421ef1ab72e25e42ee7fd5b83a11c731d4b666b",

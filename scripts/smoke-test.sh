@@ -16,7 +16,7 @@ cleanup() {
 }
 trap cleanup EXIT
 docker run -d --name "$container" --mount "type=volume,src=$state,dst=/app/gateway/state" \
-  -e PUBLIC_BASE_URL=https://pdf.example.com "$image" >/dev/null
+  "$image" >/dev/null
 
 wait_ready() {
   for ((attempt=0; attempt<60; attempt++)); do
@@ -57,6 +57,7 @@ assert metadata.version('babeldoc') == '0.6.2'
 subprocess.run(['pdf2zh_next', '--help'], check=True, stdout=subprocess.DEVNULL)
 assert subprocess.check_output(['pdf2zh-admin', 'token', 'show'], text=True).strip() == original
 assert subprocess.check_output(['pdf2zh-admin', 'url', 'show'], text=True).strip() == tokens.public_url(original)
+assert subprocess.check_output(['pdf2zh-admin', 'url', 'show', '--base-url', 'http://192.168.1.10:8890'], text=True).strip() == 'http://192.168.1.10:8890/access/' + original
 subprocess.run(['pdf2zh-admin', 'token', 'reset'], check=True, stdout=subprocess.DEVNULL)
 replacement = tokens.current()
 assert replacement != original
@@ -79,6 +80,6 @@ docker run -d --name "$container" \
   --mount "type=bind,src=$storage/config,dst=/app/server/config" \
   --mount "type=bind,src=$storage/translated,dst=/app/server/translated" \
   --mount "type=bind,src=$storage/cache,dst=/home/app/.cache" \
-  -e PUBLIC_BASE_URL=https://pdf.example.com "$image" >/dev/null
+  "$image" >/dev/null
 wait_ready
 docker exec "$container" python -c 'from pathlib import Path; assert all((Path("/app/server/config") / name).is_file() for name in ("config.json", "config.toml", "venv.json")); print("Four empty host-folder mounts initialized and healthy")'

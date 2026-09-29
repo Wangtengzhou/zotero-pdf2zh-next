@@ -95,14 +95,18 @@ def reset(directory=None):
         return token
 
 
-def public_base():
-    value = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+def public_base(value=None):
+    value = (os.environ.get("PUBLIC_BASE_URL", "") if value is None else value).strip().rstrip("/")
+    if not value:
+        return ""
     parts = urlsplit(value)
-    if (parts.scheme != "https" or not parts.netloc or parts.username
-            or parts.password or parts.path or parts.query or parts.fragment):
-        raise ValueError("Set PUBLIC_BASE_URL to an HTTPS origin, e.g. https://pdf.example.com")
+    if (parts.scheme not in ("http", "https") or not parts.hostname or parts.username
+            or parts.password or parts.path or parts.query or parts.fragment
+            or any(character.isspace() for character in value)):
+        raise ValueError("Use an HTTP(S) origin without credentials or a path")
+    parts.port
     return value
 
 
-def public_url(token):
-    return f"{public_base()}/access/{token}"
+def public_url(token, base_url=None):
+    return f"{public_base(base_url)}/access/{token}"

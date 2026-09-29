@@ -31,7 +31,7 @@ RUN install -m 755 scripts/pdf2zh-admin /usr/local/bin/pdf2zh-admin \
 USER app
 ENV GATEWAY_STATE_DIR=/app/gateway/state
 
-ARG VERSION=0.1.1
+ARG VERSION=0.1.2
 ARG SOURCE_URL
 ARG REVISION=unknown
 LABEL org.opencontainers.image.title="Zotero PDF2zh Next container" \

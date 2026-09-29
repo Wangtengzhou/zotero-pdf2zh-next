@@ -104,7 +104,8 @@ jobs:
           ```
 
           Replace VERSION with this release's version. NAS users can decompress it to `.tar` if their image import dialog does not accept gzip.
-          `compose.yaml` and `env.example` are included for deployment. Rename `env.example` to `.env` and set `PUBLIC_BASE_URL` before starting.
+          `compose.yaml` and `env.example` are included for deployment. Rename `env.example` to `.env`; no domain environment variable is required. For LAN access, set `BIND_ADDRESS` to your server LAN IP or `0.0.0.0`.
+          Run `pdf2zh-admin url show` inside the container to get the token path, and append it to your LAN address or any HTTPS reverse proxy domain.
           Use `docker compose up -d --pull never` after importing; no Docker Hub download is needed.
           Verify downloads against `SHA256SUMS`. `IMAGE_INFO.txt` records the source image digest and its size breakdown.
           GitHub's automatically generated "Source code" downloads contain source files, not a Docker image.

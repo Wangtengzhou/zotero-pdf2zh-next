@@ -2,10 +2,11 @@
 
 ## 访问地址
 
-Zotero PDF2zh 插件使用以下服务器地址：
+内网和公网统一使用令牌入口。Zotero PDF2zh 插件可使用以下服务器地址：
 
 ```text
 https://pdf.example.com/access/<随机访问令牌>
+http://192.168.1.10:8890/access/<随机访问令牌>
 ```
 
 插件在此地址后追加连接检查、上传、轮询和下载路径，网关逐次验证令牌。客户端无需浏览器登录或绑定固定 IP。
@@ -28,7 +29,15 @@ pdf2zh-admin url show
 pdf2zh-admin token show
 ```
 
-`url show` 使用 `PUBLIC_BASE_URL` 生成完整地址。该变量应为 HTTPS 域名及可选端口，不包含令牌或 `/access` 路径。
+未配置域名时，`url show` 输出 `/access/<令牌>`；将它接在服务器地址之后即可使用。可以通过命令参数临时生成完整地址：
+
+```bash
+pdf2zh-admin url show --base-url http://192.168.1.10:8890
+pdf2zh-admin url show --base-url https://pdf.example.com
+pdf2zh-admin url show --base-url https://another.example.com
+```
+
+`PUBLIC_BASE_URL` 是可选的显示偏好，支持 HTTP(S) 地址及可选端口，不包含令牌或 `/access` 路径。网关不依赖它启动，也不绑定任何域名；多个 Lucky 反代域名可同时使用同一令牌。
 
 ## 重置令牌
 
@@ -41,6 +50,8 @@ pdf2zh-admin token reset
 ```
 
 命令生成新令牌并显示新地址，无需重启容器。重置后更新 Zotero 的服务器地址；旧令牌对后续请求立即失效。已经授权的请求和正在进行的流式响应可以继续完成。
+
+未配置地址时显示新的令牌路径；也可使用 `pdf2zh-admin token reset --base-url https://pdf.example.com` 显示所选域名的完整地址。
 
 容器内部的重置命令使用 `app` 用户执行。如果管理器的终端固定为 root，请改用上面的服务器终端命令，它默认沿用镜像的服务用户。
 

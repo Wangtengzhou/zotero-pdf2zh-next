@@ -20,7 +20,7 @@
 
 | 组件 | 版本 |
 | --- | --- |
-| 容器镜像 | `0.1.1` |
+| 容器镜像 | `0.1.2` |
 | Zotero PDF2zh 服务端 | `4.1.7` |
 | PDFMathTranslate Next | `2.9.0` |
 | BabelDOC | `0.6.2` |
@@ -30,7 +30,7 @@
 
 ## 快速开始
 
-需要 Linux x86_64、Docker Engine 与 Docker Compose，以及可用的 HTTPS 反向代理入口。
+需要 Linux x86_64、Docker Engine 与 Docker Compose。可直接使用内网 HTTP 地址；公网使用 HTTPS 反向代理入口。
 
 ```bash
 git clone https://github.com/Wangtengzhou/zotero-pdf2zh-next.git
@@ -38,7 +38,7 @@ cd zotero-pdf2zh-next
 cp .env.example .env
 ```
 
-编辑 `.env`，将 `PUBLIC_BASE_URL` 设置为实际 HTTPS 域名，例如 `https://pdf.example.com`。同服务器原生运行 Lucky 时，保留默认的 `127.0.0.1:8890` 端口绑定。
+无需配置域名即可启动。同服务器原生运行 Lucky 时，保留默认的 `127.0.0.1:8890` 端口绑定；需要从局域网直连时，将 `.env` 的 `BIND_ADDRESS` 设置为服务器内网 IP 或 `0.0.0.0`。
 
 ```bash
 docker compose pull
@@ -47,7 +47,9 @@ docker compose ps
 docker exec zotero-pdf2zh-next pdf2zh-admin url show
 ```
 
-将 Lucky 的 HTTPS 域名反代到 `http://127.0.0.1:8890`，保留完整请求路径。在 Zotero PDF2zh 插件中，将最后一条命令输出的地址填入 **Python Server IP**，引擎选择 **pdf2zh_next**，并配置翻译服务商、模型及 API 密钥。
+最后一条命令默认输出 `/access/<令牌>` 路径，将它接在服务器地址之后，例如 `http://192.168.1.10:8890/access/<令牌>` 或 `https://pdf.example.com/access/<令牌>`。Lucky 保留完整请求路径，同一令牌可以在多个反代域名下使用，无需修改容器。
+
+将完整地址填入 Zotero PDF2zh 插件的 **Python Server IP**，引擎选择 **pdf2zh_next**，并配置翻译服务商、模型及 API 密钥。
 
 完整说明：[Docker 部署指南](docs/DEPLOYMENT.md)，包含 Compose、`docker run`、Portainer 和 NAS 图形化部署。
 
@@ -59,7 +61,7 @@ Docker Hub 下载困难时，可从 [GitHub Releases](https://github.com/Wangten
 
 | 引用方式 | 用途 |
 | --- | --- |
-| `:0.1.1` | 正式版本，推荐部署使用 |
+| `:0.1.2` | 正式版本，推荐部署使用 |
 | `:sha-<Git 提交号>` | 对应发布源码的追溯标签，与该版本标签指向同一个镜像 |
 | `@sha256:<镜像摘要>` | 按内容固定镜像，用于精确部署及回滚 |
 | `:latest` | 经过实际 Zotero 验收后手动推广的版本；当前尚未提供 |
@@ -69,8 +71,11 @@ Docker Hub 下载困难时，可从 [GitHub Releases](https://github.com/Wangten
 ## 管理命令
 
 ```bash
-# 显示可填入 Zotero 的完整地址
+# 显示可复用的令牌路径
 docker exec zotero-pdf2zh-next pdf2zh-admin url show
+
+# 临时指定内网地址，生成完整 URL
+docker exec zotero-pdf2zh-next pdf2zh-admin url show --base-url http://192.168.1.10:8890
 
 # 查看当前令牌
 docker exec zotero-pdf2zh-next pdf2zh-admin token show
@@ -80,6 +85,8 @@ docker exec zotero-pdf2zh-next pdf2zh-admin token reset
 ```
 
 在图形化管理器的容器终端中，直接运行 `pdf2zh-admin url show` 等命令。重置无需重启容器，之后需要更新 Zotero 中的地址。普通重启及升级保留原令牌。
+
+`PUBLIC_BASE_URL` 仅是可选的地址显示偏好，不参与认证或域名绑定。省略它时始终输出路径；`--base-url` 可以临时选择任意内网地址或反代域名。
 
 ## 适用范围
 

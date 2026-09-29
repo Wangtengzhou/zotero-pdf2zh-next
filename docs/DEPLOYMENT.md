@@ -5,7 +5,7 @@
 - Linux x86_64 / amd64 主机；当前镜像不提供 arm64 版本。
 - Docker Engine；Compose 部署使用 Docker Compose v2。
 - Zotero 与 Zotero PDF2zh 插件，后端固定为服务端 4.1.7。
-- HTTPS 域名与反向代理，例如 Lucky。
+- 内网可直接使用 HTTP；公网使用 HTTPS 域名与反向代理，例如 Lucky。
 - 翻译服务商所需的模型、API 地址及密钥，在 Zotero 插件中配置。
 
 下面各部署方式选择一种即可。首次拉取镜像包含 Python 依赖、字体及模型资源，需要预留下载与启动时间。容器健康状态变为 `healthy` 后，再连接 Zotero。
@@ -20,11 +20,11 @@ cd zotero-pdf2zh-next
 cp .env.example .env
 ```
 
-编辑 `.env`，至少修改公网域名：
+`.env` 无需填写域名即可启动。内网直连时将 `BIND_ADDRESS` 改为服务器内网 IP 或 `0.0.0.0`；同机原生 Lucky 使用默认回环地址：
 
 ```dotenv
-PUBLIC_BASE_URL=https://pdf.example.com
-PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.1
+PUBLIC_BASE_URL=
+PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.2
 BIND_ADDRESS=127.0.0.1
 HOST_PORT=8890
 MAX_UPLOAD_MB=100
@@ -45,7 +45,7 @@ Compose 自动创建四个命名卷并设置自动重启策略。命名卷带有
 
 ## 方式二：docker run
 
-不使用 Compose 时，可直接创建容器。替换下方的 HTTPS 域名：
+不使用 Compose 时，可直接创建容器，无需提供域名。内网直连时将端口绑定的 `127.0.0.1` 改为服务器内网 IP 或 `0.0.0.0`：
 
 ```bash
 docker run -d \
@@ -56,7 +56,6 @@ docker run -d \
   --security-opt no-new-privileges:true \
   --cap-drop ALL \
   -p 127.0.0.1:8890:8890 \
-  -e PUBLIC_BASE_URL=https://pdf.example.com \
   -e MAX_UPLOAD_MB=100 \
   -e UPSTREAM_TIMEOUT_SECONDS=3600 \
   -e TZ=Asia/Shanghai \
@@ -64,7 +63,7 @@ docker run -d \
   -v pdf2zh-config:/app/server/config \
   -v pdf2zh-translated:/app/server/translated \
   -v pdf2zh-cache:/home/app/.cache \
-  wangtengzhou/zotero-pdf2zh-next:0.1.1
+  wangtengzhou/zotero-pdf2zh-next:0.1.2
 ```
 
 查看状态与地址：
@@ -82,7 +81,7 @@ docker exec zotero-pdf2zh-next pdf2zh-admin url show
 1. 进入目标 Docker 环境，打开 **Stacks → Add stack**。
 2. 填写 Stack 名称，例如 `pdf2zh`，选择 **Web editor**。
 3. 将本项目 [compose.yaml](../compose.yaml) 的完整内容粘贴到编辑器。
-4. 在 **Environment variables** 添加 `PUBLIC_BASE_URL`，值为实际 HTTPS 域名，例如 `https://pdf.example.com`。也可以上传编辑好的 `.env` 文件。其他变量采用 Compose 默认值。
+4. 无需添加 `PUBLIC_BASE_URL`。需要局域网直连时，在 **Environment variables** 添加 `BIND_ADDRESS`，值为服务器内网 IP 或 `0.0.0.0`；也可上传 `.env`，其他变量使用默认值。
 5. 点击 **Deploy the stack**，等待镜像下载与容器启动。
 6. 进入 **Containers → zotero-pdf2zh-next**，检查健康状态和日志。
 7. 打开容器的 **Console**，选择 `/bin/sh`，用户使用镜像默认的 `app`（UID `10001`），连接后运行：
@@ -91,7 +90,7 @@ docker exec zotero-pdf2zh-next pdf2zh-admin url show
 pdf2zh-admin url show
 ```
 
-复制输出地址到 Zotero 插件。需要重置时，在同一终端运行 `pdf2zh-admin token reset`。
+将输出的 `/access/<令牌>` 路径接在内网地址或 Lucky 域名后，填入 Zotero 插件。也可运行 `pdf2zh-admin url show --base-url http://192.168.1.10:8890` 生成完整地址。需要重置时，在同一终端运行 `pdf2zh-admin token reset`。
 
 更新时进入原 Stack 的编辑页面，修改 `PDF2ZH_IMAGE` 或镜像版本，重新部署并拉取镜像。保持 Stack 名称与卷配置一致，避免创建一套新的空卷。
 
@@ -107,7 +106,7 @@ Docker Hub 下载受限时，可在电脑上从 [GitHub Releases](https://github
 
 | 文件 | 用途 |
 | --- | --- |
-| `zotero-pdf2zh-next-0.1.1-linux-amd64.tar.gz` | 完整 Docker 镜像，版本号随发布变化 |
+| `zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz` | 完整 Docker 镜像，版本号随发布变化 |
 | `SHA256SUMS` | 下载文件校验值 |
 | `compose.yaml` | 容器编排配置 |
 | `env.example` | 环境变量模板 |
@@ -120,7 +119,7 @@ GitHub 自动提供的 **Source code (zip / tar.gz)** 是源码包，不能导�
 1. 将镜像压缩包上传到 NAS。
 2. 打开容器管理器的 **镜像 → 导入 / 从文件导入**，选择该文件。
 3. 如果界面仅接受 `.tar`，先在电脑或 NAS 解压 `.tar.gz` 得到 `.tar` 再导入。不要解开 `.tar` 内部的镜像文件。
-4. 导入后，确认本地镜像名称为 `wangtengzhou/zotero-pdf2zh-next:0.1.1`。
+4. 导入后，确认本地镜像名称为 `wangtengzhou/zotero-pdf2zh-next:0.1.2`。
 5. 从该本地镜像创建容器，按本指南的图形化参数配置环境变量、端口与持久化卷；关闭强制拉取镜像选项。
 
 ### 终端导入
@@ -129,12 +128,12 @@ GitHub 自动提供的 **Source code (zip / tar.gz)** 是源码包，不能导�
 
 ```bash
 sha256sum -c SHA256SUMS
-docker load --input zotero-pdf2zh-next-0.1.1-linux-amd64.tar.gz
+docker load --input zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz
 docker image ls wangtengzhou/zotero-pdf2zh-next
 cp env.example .env
 ```
 
-编辑 `.env`，填写 `PUBLIC_BASE_URL` 后启动：
+按需要编辑 `.env` 的端口绑定，无需填写域名即可启动：
 
 ```bash
 docker compose up -d --pull never
@@ -156,13 +155,13 @@ Docker Hub 显示压缩镜像层的总大小，`docker image ls` 通常显示解
 
 适用于飞牛、群晖 Container Manager 等提供镜像、容器、卷与环境变量设置的管理器。不同版本的菜单名称可能不同。
 
-如果管理器支持 **Compose / 项目 / 编排**，优先导入 [compose.yaml](../compose.yaml)，并添加 `PUBLIC_BASE_URL` 环境变量；不支持变量输入时，将 YAML 中的 `${PUBLIC_BASE_URL:?Set PUBLIC_BASE_URL in .env}` 替换为实际 HTTPS 域名。
+如果管理器支持 **Compose / 项目 / 编排**，优先导入 [compose.yaml](../compose.yaml)。域名环境变量可留空；内网直连时将端口绑定改为服务器内网 IP 或 `0.0.0.0`。
 
 手动创建单个容器时，按以下配置填写：
 
 | 项目 | 值 |
 | --- | --- |
-| 镜像 | `wangtengzhou/zotero-pdf2zh-next:0.1.1` |
+| 镜像 | `wangtengzhou/zotero-pdf2zh-next:0.1.2` |
 | 容器名称 | `zotero-pdf2zh-next` |
 | 网络 | 默认 bridge |
 | 宿主机 IP / 端口 | `127.0.0.1` / `8890`，适用于同机原生 Lucky |
@@ -170,7 +169,7 @@ Docker Hub 显示压缩镜像层的总大小，`docker image ls` 通常显示解
 | 自动重启 | `unless-stopped`，或管理器提供的自动重启选项 |
 | 启动命令 / 用户 | 保留镜像默认值 |
 | 特权模式 | 关闭 |
-| `PUBLIC_BASE_URL` | 实际 HTTPS 域名，例如 `https://pdf.example.com` |
+| `PUBLIC_BASE_URL` | 可省略；仅用于管理命令默认显示完整 URL，不绑定域名 |
 | `MAX_UPLOAD_MB` | `100` |
 | `UPSTREAM_TIMEOUT_SECONDS` | `3600` |
 | `TZ` | `Asia/Shanghai` |
@@ -200,7 +199,7 @@ sudo chmod 700 /srv/pdf2zh/auth
 
 然后把这四个宿主机目录分别映射到对应容器路径。空缓存目录会遮住镜像内预下载的资源，翻译引擎可能需要重新下载；希望复用镜像缓存时使用命名卷。已有卷迁移到文件夹挂载时需先复制数据；不要直接切换到空目录，否则令牌和配置会改变。
 
-从 `0.1.1` 起，配置模板保存在镜像的独立目录，启动时自动写入配置挂载目录。首次使用空配置文件夹会生成正式配置；后续启动保留已有正式配置并执行上游迁移。
+从 `0.1.2` 起，配置模板保存在镜像的独立目录，启动时自动写入配置挂载目录。首次使用空配置文件夹会生成正式配置；后续启动保留已有正式配置并执行上游迁移。
 
 ### 管理器无法指定绑定 IP
 
@@ -249,7 +248,7 @@ networks:
 
 ## Zotero 配置
 
-1. 在容器终端运行 `pdf2zh-admin url show`，获得 `https://pdf.example.com/access/<令牌>`。
+1. 在容器终端运行 `pdf2zh-admin url show` 获取 `/access/<令牌>`，接在内网地址或反代域名之后。也可使用 `--base-url http://192.168.1.10:8890` 或 `--base-url https://pdf.example.com` 直接生成完整 URL。
 2. 在 Zotero PDF2zh 插件设置中，将完整地址填入 **Python Server IP**，末尾不要添加斜线。
 3. 将翻译引擎设为 **pdf2zh_next**。
 4. 按翻译服务商要求设置 API 地址、模型与密钥。入口令牌和翻译 API 密钥是两种不同凭据。
@@ -261,8 +260,8 @@ networks:
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `PUBLIC_BASE_URL` | 必填 | HTTPS 域名及可选端口；不含 `/access`、令牌、查询参数 |
-| `PDF2ZH_IMAGE` | `wangtengzhou/zotero-pdf2zh-next:0.1.1` | Compose 使用的镜像版本或 digest |
+| `PUBLIC_BASE_URL` | 空，可选 | 仅用于显示 URL 的 HTTP(S) 地址及可选端口；不参与认证或域名绑定 |
+| `PDF2ZH_IMAGE` | `wangtengzhou/zotero-pdf2zh-next:0.1.2` | Compose 使用的镜像版本或 digest |
 | `BIND_ADDRESS` | `127.0.0.1` | Compose 发布端口时使用的宿主机地址 |
 | `HOST_PORT` | `8890` | Compose 的宿主机端口 |
 | `MAX_UPLOAD_MB` | `100` | 网关请求体大小上限；PDF Base64 编码后约增加 1/3 |
@@ -293,7 +292,7 @@ Portainer / NAS 使用原 Stack 或原容器的更新功能，拉取目标版本
 | --- | --- |
 | 容器无法启动 / `unhealthy` | 查看容器日志，检查挂载权限、令牌文件和上游启动错误 |
 | 命令无法读取或写入令牌 | 检查 `/app/gateway/state` 是否可写；文件夹挂载需允许 UID 10001 访问 |
-| 提示 `PUBLIC_BASE_URL` 无效 | 使用完整 HTTPS 域名，不包含 `/access` 或令牌 |
+| 管理命令提示显示地址无效 | 留空环境变量以输出路径，或使用 HTTP(S) 地址，不含 `/access` 或令牌 |
 | Lucky 返回 502 | 检查后端地址；容器模式不能用 Lucky 自己的回环地址访问其他容器 |
 | 连接检查被拒绝 | 从终端重新获取完整地址，检查令牌、路径保留及额外认证设置 |
 | 大 PDF 上传失败 | 同时检查 Lucky 上传限制和 `MAX_UPLOAD_MB`，计入 Base64 体积 |
@@ -327,7 +326,7 @@ docker logs --tail=50 zotero-pdf2zh-next
 
 ### 启动时提示缺少配置文件及模板
 
-`0.1.0` 使用空宿主机文件夹挂载 `/app/server/config` 时，镜像内的模板会被遮住，导致上游启动失败。升级到 `0.1.1` 可自动恢复模板；保留原有挂载目录及权限。
+`0.1.0` 使用空宿主机文件夹挂载 `/app/server/config` 时，镜像内的模板会被遮住，导致上游启动失败。升级到 `0.1.2` 可自动恢复模板；保留原有挂载目录及权限。
 
 需要继续使用 `0.1.0` 时，可从一个不带挂载的临时容器复制模板。将目标路径替换为实际的配置目录：
 
