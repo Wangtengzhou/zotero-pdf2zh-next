@@ -11,6 +11,7 @@ from starlette.testclient import TestClient
 
 from gateway import tokens
 from gateway.app import create_app
+from scripts.config_bootstrap import TEMPLATES, seed_config_templates
 
 
 class CoreTests(unittest.TestCase):
@@ -20,6 +21,21 @@ class CoreTests(unittest.TestCase):
 
     def tearDown(self):
         self.temporary.cleanup()
+
+    def test_config_templates_on_empty_mount_preserve_active_config(self):
+        defaults = self.directory / "defaults"
+        target = self.directory / "mounted-config"
+        defaults.mkdir()
+        for name in TEMPLATES:
+            (defaults / name).write_text("image defaults")
+        seed_config_templates(defaults, target)
+        self.assertEqual(sorted(path.name for path in target.iterdir()), sorted(TEMPLATES))
+        active = target / "config.json"
+        active.write_text('{"user_setting": "preserve"}')
+        (target / "config.json.example").write_text("old template")
+        seed_config_templates(defaults, target)
+        self.assertEqual(active.read_text(), '{"user_setting": "preserve"}')
+        self.assertEqual((target / "config.json.example").read_text(), "image defaults")
 
     def test_token_persistence_reset_and_corruption(self):
         original = tokens.initialize(self.directory)

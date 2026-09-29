@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1 - 2026-09-29
+
+### Fixes
+
+- Restore managed configuration templates from an image directory outside the config mount before starting the upstream server. Empty host-folder mounts now initialize correctly, while active user configuration is preserved for upstream migration.
+- Distinguish token storage permission errors from invalid token content in startup diagnostics, including the service UID/GID and mount repair guidance.
+
+### Validation
+
+- Add a focused regression check for empty configuration directories and preservation of existing active configuration.
+- Check real container startup with all four storage paths mounted as empty host folders, in addition to named-volume token persistence.
+
 ## 0.1.0 - 2026-09-29
 
 ### Features

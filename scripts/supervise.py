@@ -9,8 +9,8 @@ from gateway import tokens
 def main():
     try:
         tokens.initialize()
-    except (OSError, ValueError, KeyError):
-        print("Invalid or unwritable token state. Restore it or run pdf2zh-admin token reset.", file=sys.stderr)
+    except (OSError, ValueError, KeyError) as error:
+        print(tokens.state_error_message(error), file=sys.stderr)
         return 1
     print("Access token loaded. View URL: docker exec zotero-pdf2zh-next pdf2zh-admin url show", flush=True)
     processes = []

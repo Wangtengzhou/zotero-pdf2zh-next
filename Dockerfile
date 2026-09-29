@@ -25,11 +25,13 @@ COPY gateway gateway
 COPY scripts scripts
 COPY THIRD_PARTY_NOTICES.md LICENSE ./
 COPY LICENSES LICENSES
-RUN install -m 755 scripts/pdf2zh-admin /usr/local/bin/pdf2zh-admin
+RUN install -m 755 scripts/pdf2zh-admin /usr/local/bin/pdf2zh-admin \
+    && mkdir -p /app/defaults/config \
+    && cp /app/server/config/*.example /app/defaults/config/
 USER app
 ENV GATEWAY_STATE_DIR=/app/gateway/state
 
-ARG VERSION=0.1.0
+ARG VERSION=0.1.1
 ARG SOURCE_URL
 ARG REVISION=unknown
 LABEL org.opencontainers.image.title="Zotero PDF2zh Next container" \

@@ -24,7 +24,7 @@ cp .env.example .env
 
 ```dotenv
 PUBLIC_BASE_URL=https://pdf.example.com
-PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.0
+PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.1
 BIND_ADDRESS=127.0.0.1
 HOST_PORT=8890
 MAX_UPLOAD_MB=100
@@ -64,7 +64,7 @@ docker run -d \
   -v pdf2zh-config:/app/server/config \
   -v pdf2zh-translated:/app/server/translated \
   -v pdf2zh-cache:/home/app/.cache \
-  wangtengzhou/zotero-pdf2zh-next:0.1.0
+  wangtengzhou/zotero-pdf2zh-next:0.1.1
 ```
 
 查看状态与地址：
@@ -107,7 +107,7 @@ Docker Hub 下载受限时，可在电脑上从 [GitHub Releases](https://github
 
 | 文件 | 用途 |
 | --- | --- |
-| `zotero-pdf2zh-next-0.1.0-linux-amd64.tar.gz` | 完整 Docker 镜像，版本号随发布变化 |
+| `zotero-pdf2zh-next-0.1.1-linux-amd64.tar.gz` | 完整 Docker 镜像，版本号随发布变化 |
 | `SHA256SUMS` | 下载文件校验值 |
 | `compose.yaml` | 容器编排配置 |
 | `env.example` | 环境变量模板 |
@@ -120,7 +120,7 @@ GitHub 自动提供的 **Source code (zip / tar.gz)** 是源码包，不能导�
 1. 将镜像压缩包上传到 NAS。
 2. 打开容器管理器的 **镜像 → 导入 / 从文件导入**，选择该文件。
 3. 如果界面仅接受 `.tar`，先在电脑或 NAS 解压 `.tar.gz` 得到 `.tar` 再导入。不要解开 `.tar` 内部的镜像文件。
-4. 导入后，确认本地镜像名称为 `wangtengzhou/zotero-pdf2zh-next:0.1.0`。
+4. 导入后，确认本地镜像名称为 `wangtengzhou/zotero-pdf2zh-next:0.1.1`。
 5. 从该本地镜像创建容器，按本指南的图形化参数配置环境变量、端口与持久化卷；关闭强制拉取镜像选项。
 
 ### 终端导入
@@ -129,7 +129,7 @@ GitHub 自动提供的 **Source code (zip / tar.gz)** 是源码包，不能导�
 
 ```bash
 sha256sum -c SHA256SUMS
-docker load --input zotero-pdf2zh-next-0.1.0-linux-amd64.tar.gz
+docker load --input zotero-pdf2zh-next-0.1.1-linux-amd64.tar.gz
 docker image ls wangtengzhou/zotero-pdf2zh-next
 cp env.example .env
 ```
@@ -162,7 +162,7 @@ Docker Hub 显示压缩镜像层的总大小，`docker image ls` 通常显示解
 
 | 项目 | 值 |
 | --- | --- |
-| 镜像 | `wangtengzhou/zotero-pdf2zh-next:0.1.0` |
+| 镜像 | `wangtengzhou/zotero-pdf2zh-next:0.1.1` |
 | 容器名称 | `zotero-pdf2zh-next` |
 | 网络 | 默认 bridge |
 | 宿主机 IP / 端口 | `127.0.0.1` / `8890`，适用于同机原生 Lucky |
@@ -199,6 +199,8 @@ sudo chmod 700 /srv/pdf2zh/auth
 ```
 
 然后把这四个宿主机目录分别映射到对应容器路径。空缓存目录会遮住镜像内预下载的资源，翻译引擎可能需要重新下载；希望复用镜像缓存时使用命名卷。已有卷迁移到文件夹挂载时需先复制数据；不要直接切换到空目录，否则令牌和配置会改变。
+
+从 `0.1.1` 起，配置模板保存在镜像的独立目录，启动时自动写入配置挂载目录。首次使用空配置文件夹会生成正式配置；后续启动保留已有正式配置并执行上游迁移。
 
 ### 管理器无法指定绑定 IP
 
@@ -260,7 +262,7 @@ networks:
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `PUBLIC_BASE_URL` | 必填 | HTTPS 域名及可选端口；不含 `/access`、令牌、查询参数 |
-| `PDF2ZH_IMAGE` | `wangtengzhou/zotero-pdf2zh-next:0.1.0` | Compose 使用的镜像版本或 digest |
+| `PDF2ZH_IMAGE` | `wangtengzhou/zotero-pdf2zh-next:0.1.1` | Compose 使用的镜像版本或 digest |
 | `BIND_ADDRESS` | `127.0.0.1` | Compose 发布端口时使用的宿主机地址 |
 | `HOST_PORT` | `8890` | Compose 的宿主机端口 |
 | `MAX_UPLOAD_MB` | `100` | 网关请求体大小上限；PDF Base64 编码后约增加 1/3 |
@@ -296,5 +298,48 @@ Portainer / NAS 使用原 Stack 或原容器的更新功能，拉取目标版本
 | 连接检查被拒绝 | 从终端重新获取完整地址，检查令牌、路径保留及额外认证设置 |
 | 大 PDF 上传失败 | 同时检查 Lucky 上传限制和 `MAX_UPLOAD_MB`，计入 Base64 体积 |
 | 翻译失败 / 超时 | 检查服务商密钥、模型、网络及反代超时；提交反馈前遮蔽密钥与令牌 |
+
+### 启动时提示 Invalid or unwritable token state
+
+该错误发生在令牌初始化阶段，尚未启动反向代理后端。`0.1.0` 的日志将挂载权限错误和令牌格式错误合并显示；先检查挂载，不要立即删除令牌文件。
+
+在服务器终端执行下面的只读命令，确认路径、读写标志和容器用户：
+
+```bash
+docker inspect zotero-pdf2zh-next --format 'User={{.Config.User}}{{range .Mounts}}{{println}}{{.Source}} -> {{.Destination}} RW={{.RW}}{{end}}'
+```
+
+宿主机文件夹挂载必须满足：`RW=true`、服务用户 UID/GID `10001:10001` 可以读写目录，以及已有的 `auth.json` 和 `.lock` 文件。仅修改目录权限不会修复曾由 root 创建的文件权限。
+
+首次部署使用本指南示例的 `/srv/pdf2zh` 专用目录时，可先停止容器，修复目录及已有文件的所有权，再启动：
+
+```bash
+docker stop zotero-pdf2zh-next
+sudo chown -R 10001:10001 /srv/pdf2zh/auth /srv/pdf2zh/config /srv/pdf2zh/translated /srv/pdf2zh/cache
+sudo chmod 700 /srv/pdf2zh/auth
+docker start zotero-pdf2zh-next
+docker logs --tail=50 zotero-pdf2zh-next
+```
+
+实际映射使用其他路径时，将这四个目录替换为 `docker inspect` 中对应的专用目录；不要对 NAS 共享根目录或系统目录递归修改所有权。若 NAS 使用 ACL 或远程共享，需让 ACL 也允许 UID 10001 访问；若 `RW=false`，先将挂载改为读写。
+
+只有确认权限正确后仍出现令牌格式错误时，才从备份恢复 `auth.json` 或显式重置令牌。容器已经退出时无法使用 `docker exec`，需通过保留原挂载的一次性容器执行恢复操作。
+
+### 启动时提示缺少配置文件及模板
+
+`0.1.0` 使用空宿主机文件夹挂载 `/app/server/config` 时，镜像内的模板会被遮住，导致上游启动失败。升级到 `0.1.1` 可自动恢复模板；保留原有挂载目录及权限。
+
+需要继续使用 `0.1.0` 时，可从一个不带挂载的临时容器复制模板。将目标路径替换为实际的配置目录：
+
+```bash
+docker stop zotero-pdf2zh-next
+docker create --name pdf2zh-template-source wangtengzhou/zotero-pdf2zh-next:0.1.0
+docker cp pdf2zh-template-source:/app/server/config/. /srv/pdf2zh/config/
+docker rm pdf2zh-template-source
+sudo chown -R 10001:10001 /srv/pdf2zh/config
+docker start zotero-pdf2zh-next
+```
+
+此操作从原镜像恢复 `.example` 模板，不删除令牌或翻译文件。
 
 端口和数据卷的行为参见 [Docker 端口发布](https://docs.docker.com/engine/network/port-publishing/) 与 [Docker 数据卷](https://docs.docker.com/engine/storage/volumes/)。

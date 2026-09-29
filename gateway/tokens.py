@@ -1,4 +1,5 @@
 import fcntl
+import errno
 import json
 import os
 import re
@@ -11,6 +12,25 @@ from urllib.parse import urlsplit
 
 def state_dir():
     return Path(os.environ.get("GATEWAY_STATE_DIR", "/app/gateway/state"))
+
+
+def state_error_message(error):
+    location = state_dir()
+    if isinstance(error, OSError):
+        reason = errno.errorcode.get(error.errno, "IO_ERROR")
+        return (
+            f"Cannot access token state at {location}: {reason}. "
+            f"Process UID/GID={os.geteuid()}:{os.getegid()}. "
+            "Check that the mount is read-write and its directory and existing "
+            "auth.json/.lock files are writable by this user. "
+            "For host-folder mounts, fix host ownership/ACLs before retrying; "
+            "token reset cannot repair mount permissions."
+        )
+    return (
+        f"Invalid token state at {location}/auth.json. "
+        "Restore a valid backup or explicitly run pdf2zh-admin token reset "
+        "as the service user after checking mount permissions."
+    )
 
 
 @contextmanager
