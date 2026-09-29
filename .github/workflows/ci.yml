@@ -21,6 +21,9 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+      digest: ${{ steps.publish.outputs.digest }}
     steps:
       - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
         with:
@@ -64,6 +67,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push the tested image
+        id: publish
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
           VERSION: ${{ steps.version.outputs.value }}
@@ -73,3 +77,16 @@ jobs:
           docker push "$DOCKERHUB_IMAGE:$VERSION"
           docker push "$DOCKERHUB_IMAGE:sha-$GITHUB_SHA"
           docker buildx imagetools inspect "$DOCKERHUB_IMAGE:$VERSION" >> "$GITHUB_STEP_SUMMARY"
+          digest=$(docker buildx imagetools inspect "$DOCKERHUB_IMAGE:$VERSION" --format '{{json .Manifest}}' | jq -r '.digest')
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  release-image:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-image.yml
+    with:
+      release_tag: ${{ github.ref_name }}
+      image_digest: ${{ needs.build.outputs.digest }}

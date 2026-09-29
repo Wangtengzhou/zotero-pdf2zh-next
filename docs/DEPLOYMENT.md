@@ -97,6 +97,61 @@ pdf2zh-admin url show
 
 界面选项可参考 [Portainer Stack 部署文档](https://docs.portainer.io/user/docker/stacks/add)。
 
+## 离线部署：GitHub Release
+
+Docker Hub 下载受限时，可在电脑上从 [GitHub Releases](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases) 下载镜像并上传到 NAS。
+
+### 下载文件
+
+选择所需版本，下载以下附件：
+
+| 文件 | 用途 |
+| --- | --- |
+| `zotero-pdf2zh-next-0.1.0-linux-amd64.tar.gz` | 完整 Docker 镜像，版本号随发布变化 |
+| `SHA256SUMS` | 下载文件校验值 |
+| `compose.yaml` | 容器编排配置 |
+| `env.example` | 环境变量模板 |
+| `IMAGE_INFO.txt` | 源镜像 digest、源码提交与体积明细 |
+
+GitHub 自动提供的 **Source code (zip / tar.gz)** 是源码包，不能导入为 Docker 镜像。
+
+### NAS 图形化导入
+
+1. 将镜像压缩包上传到 NAS。
+2. 打开容器管理器的 **镜像 → 导入 / 从文件导入**，选择该文件。
+3. 如果界面仅接受 `.tar`，先在电脑或 NAS 解压 `.tar.gz` 得到 `.tar` 再导入。不要解开 `.tar` 内部的镜像文件。
+4. 导入后，确认本地镜像名称为 `wangtengzhou/zotero-pdf2zh-next:0.1.0`。
+5. 从该本地镜像创建容器，按本指南的图形化参数配置环境变量、端口与持久化卷；关闭强制拉取镜像选项。
+
+### 终端导入
+
+上传附件到同一目录后，可先核对校验值，再加载镜像：
+
+```bash
+sha256sum -c SHA256SUMS
+docker load --input zotero-pdf2zh-next-0.1.0-linux-amd64.tar.gz
+docker image ls wangtengzhou/zotero-pdf2zh-next
+cp env.example .env
+```
+
+编辑 `.env`，填写 `PUBLIC_BASE_URL` 后启动：
+
+```bash
+docker compose up -d --pull never
+docker compose ps
+docker exec zotero-pdf2zh-next pdf2zh-admin url show
+```
+
+离线部署不执行 `docker compose pull`。如果只下载了镜像，可以跳过校验其他附件的命令，直接对镜像文件执行 `sha256sum` 并与 `SHA256SUMS` 的对应行比对。
+
+镜像压缩包包含运行环境及预下载资源；翻译时仍需要访问所选翻译服务商。未预下载或被空缓存挂载遮住的资源也可能需要网络下载。
+
+### 镜像大小
+
+本地源码目录与镜像的内容不同：镜像包含基础 Linux / Python 环境、完整翻译依赖、系统库和预下载的模型字体。网关开发虚拟环境只安装少量开发依赖，不等同于翻译引擎的运行环境。
+
+Docker Hub 显示压缩镜像层的总大小，`docker image ls` 通常显示解压后的镜像大小，Release 的 `.tar.gz` 是整个 Docker 导出包重新压缩后的大小，因此这三个数字可能不同。各版本的实际目录与镜像层大小见 `IMAGE_INFO.txt`。
+
 ## 方式四：NAS / 容器管理器图形化部署
 
 适用于飞牛、群晖 Container Manager 等提供镜像、容器、卷与环境变量设置的管理器。不同版本的菜单名称可能不同。

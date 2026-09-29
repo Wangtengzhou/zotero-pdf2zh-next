@@ -51,6 +51,8 @@ docker exec zotero-pdf2zh-next pdf2zh-admin url show
 
 完整说明：[Docker 部署指南](docs/DEPLOYMENT.md)，包含 Compose、`docker run`、Portainer 和 NAS 图形化部署。
 
+Docker Hub 下载困难时，可从 [GitHub Releases](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases) 下载离线镜像，上传到 NAS 后通过镜像导入功能或 `docker load` 加载，详见 [离线部署](docs/DEPLOYMENT.md#离线部署github-release)。
+
 ## 镜像标签
 
 镜像仓库：[wangtengzhou/zotero-pdf2zh-next](https://hub.docker.com/r/wangtengzhou/zotero-pdf2zh-next)。

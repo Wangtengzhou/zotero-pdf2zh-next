@@ -1,0 +1,116 @@
+name: Publish Offline Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing version tag, for example v0.1.0'
+        type: string
+        required: true
+      image_digest:
+        description: 'Published Docker Hub image digest (sha256:...)'
+        type: string
+        required: true
+  workflow_call:
+    inputs:
+      release_tag:
+        type: string
+        required: true
+      image_digest:
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: offline-image-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ${{ vars.DOCKERHUB_IMAGE || 'wangtengzhou/zotero-pdf2zh-next' }}
+  RELEASE_TAG: ${{ inputs.release_tag }}
+  IMAGE_DIGEST: ${{ inputs.image_digest }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Validate references
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          ref: refs/tags/${{ inputs.release_tag }}
+          persist-credentials: false
+      - name: Pull and verify published image
+        run: |
+          docker pull --platform linux/amd64 "$IMAGE@$IMAGE_DIGEST"
+          docker tag "$IMAGE@$IMAGE_DIGEST" "$IMAGE:$VERSION"
+          image_version=$(docker image inspect "$IMAGE:$VERSION" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')
+          image_revision=$(docker image inspect "$IMAGE:$VERSION" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')
+          [[ "$image_version" == "$VERSION" ]]
+          [[ "$image_revision" == "$(git rev-parse HEAD)" ]]
+          [[ "$(docker image inspect "$IMAGE:$VERSION" --format '{{.Os}}/{{.Architecture}}')" == linux/amd64 ]]
+      - name: Export and verify Docker archive
+        run: |
+          mkdir -p release-assets
+          archive="release-assets/zotero-pdf2zh-next-$VERSION-linux-amd64.tar.gz"
+          image_id=$(docker image inspect "$IMAGE:$VERSION" --format '{{.Id}}')
+          docker save "$IMAGE:$VERSION" | gzip -6 > "$archive"
+          gzip -t "$archive"
+          docker load --input "$archive"
+          [[ "$(docker image inspect "$IMAGE:$VERSION" --format '{{.Id}}')" == "$image_id" ]]
+          [[ "$(stat -c %s "$archive")" -lt 2147483648 ]]
+          cp compose.yaml release-assets/compose.yaml
+          cp .env.example release-assets/env.example
+          {
+            echo "Image: $IMAGE:$VERSION"
+            echo "Registry digest: $IMAGE_DIGEST"
+            echo "Image ID: $image_id"
+            echo "Source revision: $(git rev-parse HEAD)"
+            echo "Archive bytes: $(stat -c %s "$archive")"
+            echo
+            echo 'Layer sizes (uncompressed):'
+            docker history --no-trunc --format '{{.Size}}  {{.CreatedBy}}' "$IMAGE:$VERSION"
+            echo
+            echo 'Directory sizes in the final container:'
+            docker run --rm --entrypoint sh "$IMAGE:$VERSION" -c \
+              'du -sh /usr/local/lib/python3.12/site-packages /home/app/.cache /usr/lib /app; echo; du -sh /usr/local/lib/python3.12/site-packages/* /home/app/.cache/* | sort -hr | head -n 20'
+          } > release-assets/IMAGE_INFO.txt
+          (cd release-assets && sha256sum ./*.tar.gz compose.yaml env.example IMAGE_INFO.txt > SHA256SUMS)
+          cat release-assets/IMAGE_INFO.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          awk -v version="$VERSION" '
+            $0 ~ "^## " version " - " {inside=1; next}
+            /^## / && inside {exit}
+            inside {print}
+          ' CHANGELOG.md > release-notes.md
+          [[ -s release-notes.md ]]
+          cat >> release-notes.md <<'NOTES'
+
+          ## Offline Docker image
+
+          Download the `linux-amd64.tar.gz` asset below, then import it with:
+
+          ```bash
+          docker load --input zotero-pdf2zh-next-VERSION-linux-amd64.tar.gz
+          ```
+
+          Replace VERSION with this release's version. NAS users can decompress it to `.tar` if their image import dialog does not accept gzip.
+          `compose.yaml` and `env.example` are included for deployment. Rename `env.example` to `.env` and set `PUBLIC_BASE_URL` before starting.
+          Use `docker compose up -d --pull never` after importing; no Docker Hub download is needed.
+          Verify downloads against `SHA256SUMS`. `IMAGE_INFO.txt` records the source image digest and its size breakdown.
+          GitHub's automatically generated "Source code" downloads contain source files, not a Docker image.
+          NOTES
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "$RELEASE_TAG" --notes-file release-notes.md
+          fi
+          gh release upload "$RELEASE_TAG" release-assets/*
+          gh release edit "$RELEASE_TAG" --draft=false

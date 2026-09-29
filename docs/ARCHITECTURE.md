@@ -41,4 +41,6 @@ PDFMathTranslate Next 与 BabelDOC 使用固定 Python 依赖锁安装。基础�
 
 GitHub Actions 构建一个 Linux amd64 镜像，通过核心测试与真实容器检查后，将该镜像发布为版本标签及 Git 提交追溯标签。两者指向相同内容。
 
+离线发布流程按 Docker Hub digest 拉取同一镜像，使用 `docker save` 和 gzip 导出，验证导入后上传到 GitHub Release，并附上校验值、部署文件与体积报告。
+
 独立推广流程接受已发布镜像的 digest，在人工完成实际 Zotero 验收后创建 `latest` 标签，不重新构建。发布操作和本地开发流程见 [CONTRIBUTING.md](../CONTRIBUTING.md)。

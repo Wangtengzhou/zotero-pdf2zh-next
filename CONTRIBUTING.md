@@ -47,6 +47,7 @@ uv pip compile requirements.in \
 - 推送 `v*` Git 标签：完成上述检查后发布同一受测镜像。
 - Git 标签必须与 `versions.json` 中的容器版本对应；已存在的公开版本阻止覆盖，修复使用新版本号。
 - 发布 `:<版本>` 和 `:sha-<Git 提交号>`，并在 Actions 摘要中输出镜像 digest。
+- 发布完成后调用 `Publish Offline Image`，按同一 digest 导出 Docker 镜像，在 GitHub Release 附加 `.tar.gz`、校验值、部署文件及体积明细。
 
 在自有仓库启用发布时，配置：
 
@@ -57,6 +58,12 @@ uv pip compile requirements.in \
 | Actions Variable，可选 | `DOCKERHUB_IMAGE` | 目标镜像仓库；默认 `wangtengzhou/zotero-pdf2zh-next` |
 
 目标 Docker Hub 仓库需为公开仓库，以便执行已有版本检查。发布凭据不会提供给 Pull Request 检查。
+
+### Publish Offline Image
+
+也可手动运行此流程，为已有版本补充离线镜像。输入现有 Git 标签（如 `v0.1.0`）以及已发布镜像的 `sha256:` digest。流程拉取该镜像，核对版本、源码提交和平台，导出并实际执行 `docker load` 校验后上传 Release 附件，不重新构建或更改原镜像。
+
+流程使用 GitHub 内置令牌的 `contents: write` 权限，不需要额外配置发布 Secret。已存在的同名附件不自动覆盖；失败重试前检查 Release 状态。二进制镜像保存在 Release 附件中，不提交到 Git 源码历史。
 
 ### Promote Tested Digest to Latest
 
