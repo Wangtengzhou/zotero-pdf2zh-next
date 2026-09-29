@@ -43,6 +43,14 @@ docker exec zotero-pdf2zh-next pdf2zh-admin url show
 
 Compose 自动创建四个命名卷并设置自动重启策略。命名卷带有 Compose 项目前缀；升级时保持项目目录或项目名称一致。
 
+在线部署需要按内容固定 `0.1.2` 镜像时，可将 `.env` 的 `PDF2ZH_IMAGE` 设置为：
+
+```text
+wangtengzhou/zotero-pdf2zh-next@sha256:d119bd04be01f90e1377e2dc1b69e2dd08a4c48ca825f208d611d53ace07505c
+```
+
+离线导入使用版本标签 `:0.1.2`；Docker 导出包不保留所有 registry 引用，按 digest 指定镜像可能触发远程拉取。
+
 ## 方式二：docker run
 
 不使用 Compose 时，可直接创建容器，无需提供域名。内网直连时将端口绑定的 `127.0.0.1` 改为服务器内网 IP 或 `0.0.0.0`：
