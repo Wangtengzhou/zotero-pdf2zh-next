@@ -73,9 +73,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.value }}
         run: |
           docker tag pdf2zh-local:test "$DOCKERHUB_IMAGE:$VERSION"
-          docker tag pdf2zh-local:test "$DOCKERHUB_IMAGE:sha-$GITHUB_SHA"
           docker push "$DOCKERHUB_IMAGE:$VERSION"
-          docker push "$DOCKERHUB_IMAGE:sha-$GITHUB_SHA"
           docker buildx imagetools inspect "$DOCKERHUB_IMAGE:$VERSION" >> "$GITHUB_STEP_SUMMARY"
           digest=$(docker buildx imagetools inspect "$DOCKERHUB_IMAGE:$VERSION" --format '{{json .Manifest}}' | jq -r '.digest')
           [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
