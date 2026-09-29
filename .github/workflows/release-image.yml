@@ -131,8 +131,9 @@ jobs:
           Verify downloads against `SHA256SUMS`. `IMAGE_INFO.txt` records the source image digest and its size breakdown.
           GitHub's automatically generated "Source code" downloads contain source files, not a Docker image.
           NOTES
+          sed -i "s/zotero-pdf2zh-next-VERSION-/zotero-pdf2zh-next-$VERSION-/g" release-notes.md
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --verify-tag --draft --title "$RELEASE_TAG" --notes-file release-notes.md
           fi
           gh release upload "$RELEASE_TAG" release-assets/*
-          gh release edit "$RELEASE_TAG" --draft=false
+          gh release edit "$RELEASE_TAG" --draft=false --notes-file release-notes.md

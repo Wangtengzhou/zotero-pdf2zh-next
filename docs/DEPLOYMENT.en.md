@@ -4,6 +4,8 @@
 
 ## Requirements and Storage
 
+**Choose one method; do not create the container twice.** Method 1 walks through the NAS interface. Method 2 lets you paste one command block to create storage and start the service. Install and start Docker first, and note your NAS LAN IP, for example `192.168.1.10`. Connect over the LAN before adding public access. Existing installations should use the upgrade instructions below.
+
 Linux x86_64 / amd64 is supported; arm64 images are not available. Use HTTP for trusted LAN access and an HTTPS proxy such as Lucky for public access. No domain is required to start the container.
 
 The service runs as UID/GID `10001:10001`. Persist these four locations:
@@ -36,12 +38,31 @@ GitHub's automatically generated **Source code** archives are not images. Compar
 
 ### 2. Prepare Four Folders
 
-Create `auth`, `config`, `translated` and `cache` inside a dedicated project directory. Example roots:
+In the NAS file manager, open your Docker folder, create a project folder, and create `auth`, `config`, `translated` and `cache` inside it. When creating the container, add four storage mappings. **Select the NAS folder on the left; enter the container path exactly on the right.**
 
-- Synology: `/volume1/docker/zotero-pdf2zh-next`
-- fnOS: `/vol1/1000/Docker/Zotero-PDF2zh-Next`
+**Synology** (Docker shared folder on volume 1):
 
-**UID/GID `10001:10001` must be able to read and write all four folders.** NAS-created folders often belong to another user. Fix ownership before starting the container. Run this in the NAS terminal, changing `PDF2ZH_STORAGE` to your actual dedicated directory first:
+| NAS folder — left side | Container path — right side | Access |
+| --- | --- | --- |
+| `/volume1/docker/zotero-pdf2zh-next/auth` | `/app/gateway/state` | Read/write |
+| `/volume1/docker/zotero-pdf2zh-next/config` | `/app/server/config` | Read/write |
+| `/volume1/docker/zotero-pdf2zh-next/translated` | `/app/server/translated` | Read/write |
+| `/volume1/docker/zotero-pdf2zh-next/cache` | `/home/app/.cache` | Read/write |
+
+**fnOS** (example Docker folder):
+
+| NAS folder — left side | Container path — right side | Access |
+| --- | --- | --- |
+| `/vol1/1000/Docker/Zotero-PDF2zh-Next/auth` | `/app/gateway/state` | Read/write |
+| `/vol1/1000/Docker/Zotero-PDF2zh-Next/config` | `/app/server/config` | Read/write |
+| `/vol1/1000/Docker/Zotero-PDF2zh-Next/translated` | `/app/server/translated` | Read/write |
+| `/vol1/1000/Docker/Zotero-PDF2zh-Next/cache` | `/home/app/.cache` | Read/write |
+
+Your NAS paths may differ by volume and account. Find the full path in folder properties or use the folder picker. **Only change the left side; keep the right side exactly as shown.**
+
+**Set permissions once before starting.** The container writes as user/group `10001:10001`; NAS-created folders usually belong to another user. This graphical method therefore still requires one terminal operation. Choose Method 2 to avoid managing folder permissions yourself.
+
+Open the NAS system terminal. If unavailable, enable SSH in NAS settings and run `ssh your-nas-user@your-nas-ip` from your computer. Run the following on the **NAS**, not inside the container. For Synology, replace the first line with `PDF2ZH_STORAGE=/volume1/docker/zotero-pdf2zh-next`. For fnOS, use the line below. If your actual folder differs, change only the path after `=`. Paste all four lines:
 
 ```bash
 PDF2ZH_STORAGE=/vol1/1000/Docker/Zotero-PDF2zh-Next
@@ -62,14 +83,14 @@ Select the local image and create a container with these settings:
 | Container name | `zotero-pdf2zh-next` |
 | Network | Default bridge |
 | Port | Host `8890` to container `8890`, TCP |
-| Bind address | LAN access: LAN IP or `0.0.0.0`; native Lucky on the same host: `127.0.0.1` |
+| Bind address, if shown | `0.0.0.0` for LAN access |
 | Restart policy | Automatic restart / `unless-stopped` |
 | User and startup command | Keep image defaults |
 | Privileged mode | Disabled |
 
-Mount the four host folders at the corresponding container paths in the storage table, all read-write. Do not mount over `/app` or the entire `/app/server`, and do not publish the internal port `8891`.
+On the storage page, click **Add** four times and fill in the Synology or fnOS mapping table above. Set all four rows to read/write. Do not mount over `/app` or the entire `/app/server`, and do not publish port `8891`.
 
-Environment variables can use their defaults. `PUBLIC_BASE_URL` does not need to be added:
+**Do not add environment variables; keep the defaults. No reverse proxy domain is needed.** The following table is only for later customization:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -97,53 +118,129 @@ https://pdf.example.com/access/<token>
 
 ## Method 2: Docker Compose
 
-Use Docker Compose v2 and obtain the project:
+### 1. Paste One Block to Install and Start
+
+Run this in the **NAS/server terminal**, not your computer's local shell or the container console. Docker Compose v2 is required. On Synology/fnOS, install and start the Docker application first. This is for a new installation; use the upgrade instructions if the container already exists.
+
+**Paste the entire block without changing domains, paths or variables.** It creates `zotero-pdf2zh-next` in your login user's home directory, writes the deployment file, pulls the image, creates four persistent volumes and starts the service. Wait for the approximately 843 MB download. If asked for a password, enter your NAS login password; hidden password input is normal.
 
 ```bash
-git clone https://github.com/Wangtengzhou/zotero-pdf2zh-next.git
-cd zotero-pdf2zh-next
-cp .env.example .env
+(
+set -e
+mkdir -p "$HOME/zotero-pdf2zh-next"
+cd "$HOME/zotero-pdf2zh-next"
+if [ -e compose.yaml ] || [ -e .env ]; then
+  echo '已有部署文件，请使用升级步骤 / Existing deployment: use upgrade instructions.'
+  exit 1
+fi
+sudo docker compose version
+cat > compose.yaml <<'YAML'
+services:
+  pdf2zh:
+    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.2}
+    platform: linux/amd64
+    container_name: zotero-pdf2zh-next
+    restart: unless-stopped
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:8890:8890"
+    volumes:
+      - auth:/app/gateway/state
+      - config:/app/server/config
+      - translated:/app/server/translated
+      - cache:/home/app/.cache
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+volumes:
+  auth:
+  config:
+  translated:
+  cache:
+YAML
+printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.2' 'BIND_ADDRESS=0.0.0.0' > .env
+sudo docker compose pull
+sudo docker compose up -d --wait --wait-timeout 180
+sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
+)
 ```
 
-Example `.env`:
+When the final command prints `/access/…`, continue below. If `--wait` is unsupported, update Docker Compose v2. If startup times out or exits, run `sudo docker logs --tail 80 zotero-pdf2zh-next` in the NAS terminal.
 
-```dotenv
-PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.2
-BIND_ADDRESS=127.0.0.1
-HOST_PORT=8890
-PUBLIC_BASE_URL=
-MAX_UPLOAD_MB=100
-UPSTREAM_TIMEOUT_SECONDS=3600
-TZ=Asia/Shanghai
-```
+**No manual folder mapping is required.** Docker manages four persistent volumes that survive container replacement. Deployment files are in `~/zotero-pdf2zh-next`. Keep that folder name and do not delete the volumes.
 
-The default loopback binding suits native Lucky on the same host. For LAN access, set `BIND_ADDRESS` to the server's LAN IP or `0.0.0.0`. Leave the domain unset if desired.
+### 2. Enter the Address in Zotero
 
-Start online:
-
-```bash
-docker compose pull
-docker compose up -d
-docker compose ps
-docker exec zotero-pdf2zh-next pdf2zh-admin url show
-```
-
-Compose uses four named volumes, initialized by Docker with image resources and permissions. Keep the Compose project name unchanged. No host folders are required. If you replace the volumes with host-folder mounts, prepare their permissions as described in the graphical deployment section.
+Append the complete `/access/…` output to `http://YOUR-NAS-IP:8890`. Enter that URL in **Python Server IP**, select **pdf2zh_next**, and configure your provider, model and API key. See the example below.
 
 ### Offline Compose Import
 
-Download the image, `compose.yaml`, `env.example` and optional checksum files from the release, then upload them to one directory:
+If Docker Hub downloads fail, use this alternative. Download `zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz` from the [0.1.2 release](https://github.com/Wangtengzhou/zotero-pdf2zh-next/releases/tag/v0.1.2) and upload it to a NAS folder. In the NAS terminal, type `cd ` followed by that folder's full path and press Enter. Then run:
 
 ```bash
-docker load --input zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz
-cp env.example .env
-docker compose up -d --pull never
-docker compose ps
+(
+set -e
+sudo docker load --input zotero-pdf2zh-next-0.1.2-linux-amd64.tar.gz
+mkdir -p "$HOME/zotero-pdf2zh-next"
+cd "$HOME/zotero-pdf2zh-next"
+if [ ! -f compose.yaml ]; then
+cat > compose.yaml <<'YAML'
+services:
+  pdf2zh:
+    image: ${PDF2ZH_IMAGE:-wangtengzhou/zotero-pdf2zh-next:0.1.2}
+    platform: linux/amd64
+    container_name: zotero-pdf2zh-next
+    restart: unless-stopped
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:8890:8890"
+    volumes:
+      - auth:/app/gateway/state
+      - config:/app/server/config
+      - translated:/app/server/translated
+      - cache:/home/app/.cache
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+volumes:
+  auth:
+  config:
+  translated:
+  cache:
+YAML
+fi
+if [ ! -f .env ]; then
+  printf '%s\n' 'PDF2ZH_IMAGE=wangtengzhou/zotero-pdf2zh-next:0.1.2' 'BIND_ADDRESS=0.0.0.0' > .env
+fi
+sudo docker compose up -d --pull never --wait --wait-timeout 180
+sudo docker exec zotero-pdf2zh-next pdf2zh-admin url show
+)
 ```
 
-Use the version tag `:0.1.2` and do not run `docker compose pull`. The domain can remain unset; adjust port binding if needed. If all release assets are downloaded, verify them first with `sha256sum -c SHA256SUMS`.
+This also resumes an online installation that failed while pulling the image. Once the image archive is uploaded, these steps need no network connection: the commands generate the deployment file directly. Actual translation still needs access to your chosen provider and may download missing cached resources.
 
 ## Lucky and Zotero
+
+### Connect Zotero: Confirm LAN Access First
+
+If the NAS IP is `192.168.1.10` and the command prints `/access/abc123`, enter `http://192.168.1.10:8890/access/abc123` in **Python Server IP**. Replace `abc123` with your full real token. Do not add a trailing slash. Select **pdf2zh_next**, configure your provider, model and API key, then translate a short PDF and confirm the translated attachment appears. Opening the bare server address in a browser is not a deployment check.
+
+### Public Access: Fill in Lucky
+
+With a working domain and HTTPS certificate, create or edit a reverse proxy rule:
+
+| Setting | Value |
+| --- | --- |
+| Frontend domain | Your domain, e.g. `pdf.example.com` |
+| Frontend protocol | HTTPS with that domain's certificate |
+| Backend: native Lucky on the same server | `http://127.0.0.1:8890` |
+| Backend: Lucky in a container or on another device | `http://YOUR-NAS-IP:8890`, e.g. `http://192.168.1.10:8890` |
+| Path rewriting | Disabled; preserve the full original path |
+| Additional login | Disabled; the token URL provides authentication |
+
+Save the rule, then enter `https://YOUR-DOMAIN/access/YOUR-FULL-TOKEN` in Zotero. Multiple domains can share one token without changing container variables. Expose the HTTPS proxy publicly; do not forward port `8890` directly from your router to the internet.
 
 Native Lucky on the same host proxies its HTTPS domain to `http://127.0.0.1:8890`, preserving the full path and query string. Disable additional login redirects and business-response caching. Match upload limits to `MAX_UPLOAD_MB` and timeouts to `UPSTREAM_TIMEOUT_SECONDS`; preserve SSE streaming and disable or redact access logs containing tokens.
 
@@ -165,6 +262,16 @@ pdf2zh-admin token reset
 Use the default `app` user. If the graphical console forces root, run `docker exec zotero-pdf2zh-next pdf2zh-admin token reset` from the NAS terminal to avoid creating token files unreadable by the service user. See [token management](../PUBLIC_ACCESS.en.md).
 
 Before upgrading, let translations finish and back up all four storage locations. In the graphical manager, import or download the new version and update the original container while retaining all mounts. With Compose, change the version in `.env`, pull and start again; use `--pull never` after offline import.
+
+If installed with this guide's Compose commands, open `~/zotero-pdf2zh-next/.env` in a text editor, replace `0.1.2` at the end of the first line with the desired published version, and save. Run on the NAS:
+
+```bash
+cd "$HOME/zotero-pdf2zh-next"
+sudo docker compose pull
+sudo docker compose up -d --wait --wait-timeout 180
+```
+
+To resume a first online installation after fixing a network failure, run the same three lines without changing the version. For offline upgrades, import the new image first, then replace the two Docker commands with `sudo docker compose up -d --pull never --wait --wait-timeout 180`.
 
 To roll back, select the old version and restore its configuration backup if the format changed. Restarting clears in-memory task history but preserves PDFs. Do not run `docker compose down -v` or select an option that deletes volumes.
 

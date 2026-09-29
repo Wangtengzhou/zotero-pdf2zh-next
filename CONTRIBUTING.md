@@ -50,6 +50,7 @@ uv pip compile requirements.in \
 - Docker Hub 只发布 `:<版本>`，不生成 `sha-…` 或 `latest`。
 - 源码提交保存在 OCI 元数据；digest 用于验证与离线导出，不作为额外标签。
 - 随后发布 GitHub Release 离线镜像、校验值、部署文件与体积明细。
+- 每个新版本必须同时填写中英文更新日志；发布前检查两份版本记录，Release 自动汇总中文、英文及双语离线部署说明。
 
 配置公开 Docker Hub 仓库和以下 GitHub 设置：
 

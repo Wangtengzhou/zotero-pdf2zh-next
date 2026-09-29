@@ -48,6 +48,7 @@ Every documentation page has a Chinese primary file and an English `.en.md` coun
 - A `v*` Git tag publishes the same tested image only after checks pass.
 - The tag must match the container version in `versions.json`. Existing versions cannot be overwritten; fixes need a new version.
 - Docker Hub publishes `:<version>` only, without `sha-…` or `latest`.
+- Every new version requires both Chinese and English changelog entries. Release checks require both, and GitHub Release notes include both languages and bilingual offline instructions.
 - Source revisions remain in OCI metadata. Digests are used for verification and offline export, not extra tags.
 - The workflow then publishes GitHub Release offline images, checksums, deployment files and size information.
 

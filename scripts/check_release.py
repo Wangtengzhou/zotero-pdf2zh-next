@@ -13,6 +13,16 @@ if not re.fullmatch(r"\d+\.\d+\.\d+", version):
 if os.environ.get("RELEASE_TAG") != "v" + version:
     raise SystemExit("Release tag must match versions.json")
 
+for filename in ("CHANGELOG.md", "CHANGELOG.en.md"):
+    changelog = root / filename
+    match = re.search(
+        rf"^## {re.escape(version)} - [^\n]+\n(.*?)(?=^## |\Z)",
+        changelog.read_text() if changelog.is_file() else "",
+        re.MULTILINE | re.DOTALL,
+    )
+    if not match or not match.group(1).strip():
+        raise SystemExit(f"Add release notes for {version} to {filename}")
+
 image = os.environ["DOCKERHUB_IMAGE"]
 if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*/[a-z0-9][a-z0-9_.-]*", image):
     raise SystemExit("DOCKERHUB_IMAGE must be a lowercase Docker Hub namespace/repository")

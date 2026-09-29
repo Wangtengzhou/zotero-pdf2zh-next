@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- Add complete Synology/fnOS folder mapping tables and copy-and-run online/offline Compose installation blocks.
+- Require Chinese and English changelog entries before new releases and generate bilingual Release notes.
 - Provide paired Chinese and English pages for all documentation.
 - Consolidate deployment into Synology / fnOS graphical deployment and Docker Compose, each with online and offline paths.
 - Publish version tags only going forward; remove commit tags and latest promotion.
