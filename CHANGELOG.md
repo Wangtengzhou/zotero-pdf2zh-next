@@ -1,44 +1,45 @@
-# Changelog
+# 更新日志
+
+**简体中文** | [English](CHANGELOG.en.md)
+
+## 未发布
+
+- 所有说明文档提供中英双语对应页面。
+- 部署方法统一为群晖／飞牛图形化部署和 Docker Compose，分别包含在线与离线流程。
+- Docker Hub 后续只发布版本号标签，移除提交号标签与 latest 推广流程。
 
 ## 0.1.2 - 2026-09-29
 
-### Fixes
+### 修复
 
-- Initialize managed configuration templates for empty host-folder mounts while preserving active user configuration.
-- Make PUBLIC_BASE_URL optional. Use a reusable token path for both LAN and public access, with no domain binding.
-- Add --base-url to URL display and token reset commands to generate a full HTTP(S) URL for any chosen address without recreating the container.
-- Improve token storage diagnostics to distinguish mount permission failures from invalid token content.
+- 空宿主机文件夹挂载时恢复托管配置模板，保留已有正式配置。
+- PUBLIC_BASE_URL 改为可选，内网和公网复用令牌路径，不绑定域名。
+- 查看 URL 与重置命令支持 --base-url，临时生成所选 HTTP(S) 地址。
+- 区分令牌目录权限错误与令牌文件内容错误。
 
-### Validation
+### 检查
 
-- Five focused core tests include empty-config initialization, active-config preservation, and URL display with no configured domain or multiple addresses.
-- Container checks cover both named-volume persistence and startup with four empty host-folder mounts without a domain environment variable.
+- 5 项核心检查覆盖空目录、配置保留、未设置域名及多个地址显示。
+- 容器检查覆盖命名卷持久化，以及无域名变量、四个空宿主机文件夹挂载启动。
 
 ## 0.1.1 - 2026-09-29
 
-Publication canceled before uploading images; the fixes are included in 0.1.2.
+镜像上传前取消发布，相关修复合并到 0.1.2。
 
-### Fixes
-
-- Restore managed configuration templates from an image directory outside the config mount before starting the upstream server. Empty host-folder mounts now initialize correctly, while active user configuration is preserved for upstream migration.
-- Distinguish token storage permission errors from invalid token content in startup diagnostics, including the service UID/GID and mount repair guidance.
-
-### Validation
-
-- Add a focused regression check for empty configuration directories and preservation of existing active configuration.
-- Check real container startup with all four storage paths mounted as empty host folders, in addition to named-volume token persistence.
+- 修复空配置目录挂载下的模板初始化。
+- 改进令牌存储权限错误提示，并增加对应初始化检查。
 
 ## 0.1.0 - 2026-09-29
 
-### Features
+### 功能
 
-- Package the original Zotero PDF2zh server 4.1.7 with official PDFMathTranslate Next 2.9.0 and BabelDOC 0.6.2 for Linux amd64.
-- Add automatic authentication through a persistent random token in the server URL, compatible with Lucky HTTPS reverse proxy.
-- Provide terminal commands to view the token, display the Zotero URL, and reset credentials without restarting the container.
-- Persist configuration, PDFs, token state, and translation resource caches.
-- Build and check images with GitHub Actions, publish version tags to Docker Hub, and promote accepted digests to latest without rebuilding.
+- 封装原版服务端 4.1.7、Next 2.9.0 和 BabelDOC 0.6.2，支持 Linux amd64。
+- 使用持久化随机令牌自动认证，兼容 Lucky HTTPS 反代。
+- 提供地址和令牌查看，以及无需重启的令牌重置命令。
+- 持久化配置、PDF、令牌及资源缓存。
+- GitHub Actions 构建、检查并发布镜像；初版提供版本与提交号标签和独立 latest 推广流程，后续改为仅版本号。
 
-### Validation
+### 检查
 
-- Four focused core tests cover token persistence, CLI management, authentication, forwarding, upload limits, and upstream error responses.
-- Real Zotero translation and attachment import require deployment acceptance; CI does not call a paid translation API.
+- 4 项核心检查覆盖认证、转发、管理命令、持久化及错误处理。
+- 实际翻译与 Zotero 附件导入需要部署验收，CI 不调用收费 API。

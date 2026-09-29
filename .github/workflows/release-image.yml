@@ -68,16 +68,16 @@ jobs:
           cp compose.yaml release-assets/compose.yaml
           cp .env.example release-assets/env.example
           {
-            echo "Image: $IMAGE:$VERSION"
-            echo "Registry digest: $IMAGE_DIGEST"
-            echo "Image ID: $image_id"
-            echo "Source revision: $(git rev-parse HEAD)"
-            echo "Archive bytes: $(stat -c %s "$archive")"
+            echo "镜像 / Image: $IMAGE:$VERSION"
+            echo "仓库摘要 / Registry digest: $IMAGE_DIGEST"
+            echo "镜像 ID / Image ID: $image_id"
+            echo "源码提交 / Source revision: $(git rev-parse HEAD)"
+            echo "归档字节数 / Archive bytes: $(stat -c %s "$archive")"
             echo
-            echo 'Layer sizes (uncompressed):'
+            echo '镜像层大小（未压缩） / Layer sizes (uncompressed):'
             docker history --no-trunc --format '{{.Size}}  {{.CreatedBy}}' "$IMAGE:$VERSION"
             echo
-            echo 'Directory sizes in the final container:'
+            echo '容器目录大小 / Directory sizes in the final container:'
             docker run --rm --entrypoint sh "$IMAGE:$VERSION" -c \
               'du -sh /usr/local/lib/python3.12/site-packages /home/app/.cache /usr/lib /app; echo; du -sh /usr/local/lib/python3.12/site-packages/* /home/app/.cache/* | sort -hr | head -n 20'
           } > release-assets/IMAGE_INFO.txt
@@ -87,15 +87,29 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          awk -v version="$VERSION" '
-            $0 ~ "^## " version " - " {inside=1; next}
-            /^## / && inside {exit}
-            inside {print}
-          ' CHANGELOG.md > release-notes.md
+          : > release-notes.md
+          for changelog in CHANGELOG.md CHANGELOG.en.md; do
+            [[ -f "$changelog" ]] || continue
+            awk -v version="$VERSION" '
+              index($0, "## " version " - ") == 1 {inside=1; next}
+              /^## / && inside {exit}
+              inside {print}
+            ' "$changelog" > release-section.md
+            [[ -s release-section.md ]]
+            if [[ "$changelog" == CHANGELOG.en.md ]]; then
+              echo '## English' >> release-notes.md
+            elif [[ -f CHANGELOG.en.md ]]; then
+              echo '## 中文' >> release-notes.md
+            fi
+            cat release-section.md >> release-notes.md
+          done
           [[ -s release-notes.md ]]
           cat >> release-notes.md <<'NOTES'
 
-          ## Offline Docker image
+          ## 离线镜像 / Offline Docker Image
+
+          下载下方的 `linux-amd64.tar.gz` 镜像附件，然后使用以下命令导入。将 VERSION 替换为本次版本号。
+          NAS 图形化导入窗口若不支持 gzip，先解压为 `.tar`，无需解开 tar 内部文件。
 
           Download the `linux-amd64.tar.gz` asset below, then import it with:
 
@@ -104,6 +118,13 @@ jobs:
           ```
 
           Replace VERSION with this release's version. NAS users can decompress it to `.tar` if their image import dialog does not accept gzip.
+
+          附件中的 `compose.yaml` 和 `env.example` 用于部署；将 `env.example` 重命名为 `.env`，不需要配置域名环境变量。局域网直连时，将 `BIND_ADDRESS` 设为服务器内网 IP 或 `0.0.0.0`。
+          在容器终端运行 `pdf2zh-admin url show` 获取令牌路径，可接在内网地址或任意 HTTPS 反代域名后。
+          导入后使用 `docker compose up -d --pull never` 启动，无需从 Docker Hub 下载。
+          使用 `SHA256SUMS` 校验下载文件；`IMAGE_INFO.txt` 记录镜像摘要和大小组成。
+          GitHub 自动生成的 “Source code” 下载包是源码，不是 Docker 镜像。
+
           `compose.yaml` and `env.example` are included for deployment. Rename `env.example` to `.env`; no domain environment variable is required. For LAN access, set `BIND_ADDRESS` to your server LAN IP or `0.0.0.0`.
           Run `pdf2zh-admin url show` inside the container to get the token path, and append it to your LAN address or any HTTPS reverse proxy domain.
           Use `docker compose up -d --pull never` after importing; no Docker Hub download is needed.

@@ -1,8 +1,10 @@
-# 开发与镜像发布
+# 开发与发布
+
+**简体中文** | [English](CONTRIBUTING.en.md)
 
 ## 本地开发
 
-网关开发使用 Python 3.12：
+使用 Python 3.12：
 
 ```bash
 python -m venv .venv
@@ -10,9 +12,9 @@ python -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-核心测试覆盖令牌持久化及重置、终端管理、认证和转发、请求体限制及上游错误。测试不调用收费翻译 API。
+核心检查覆盖令牌持久化与重置、CLI、认证与转发、体积限制、上游错误和空配置目录初始化，不调用收费翻译 API。
 
-## 构建镜像
+## 构建与检查
 
 ```bash
 docker build --platform linux/amd64 \
@@ -21,54 +23,50 @@ docker build --platform linux/amd64 \
 bash scripts/smoke-test.sh zotero-pdf2zh-next:local
 ```
 
-容器检查包括上游启动、版本与 Next CLI、认证、令牌重置和保留卷后的重建。部署后使用 Zotero 确认 PDF 上传、进度、下载及附件导入。
+容器检查包括上游健康与版本、Next CLI、认证、热重置、命名卷持久化，以及无域名变量的四个空文件夹挂载启动。实际翻译与 Zotero 导入在部署环境确认。
 
-## 更新依赖
+## 更新依赖与文档
 
-修改 `requirements.in` 后使用 uv 重新生成 Linux amd64 依赖锁：
+修改 `requirements.in` 后重新生成 Linux amd64 依赖锁：
 
 ```bash
 uv pip compile requirements.in \
   --python-version 3.12 \
   --python-platform x86_64-unknown-linux-gnu \
-  --generate-hashes \
-  -o requirements.lock
+  --generate-hashes -o requirements.lock
 ```
 
-网关测试依赖由 `requirements-gateway.in` 与 `requirements-gateway.lock` 管理。
+网关开发依赖使用 `requirements-gateway.in` 和 `.lock`。版本升级同步核对 `versions.json`、Dockerfile、`pyproject.toml`、容器检查中的版本断言、Compose 默认版本和更新日志。上游包变更需重新核实地址、校验值、协议及许可证。
 
-版本升级时同步检查 `versions.json`、`Dockerfile` 的版本标签与断言、`pyproject.toml`、`scripts/smoke-test.sh` 及 `CHANGELOG.md`。变更上游包时重新核实下载地址、校验值、插件协议及许可证。
+所有说明文档采用中文主文件和 `.en.md` 英文对应文件；内容、命令和语言链接同步维护。许可证原文不改写。
 
-## GitHub Actions
+## 自动发布
 
-### Build, Check and Publish
+`Build, Check and Publish`：
 
-- `main`、Pull Request 与手动运行：核心测试、镜像构建、容器检查。
-- 推送 `v*` Git 标签：完成上述检查后发布同一受测镜像。
-- Git 标签必须与 `versions.json` 中的容器版本对应；已存在的公开版本阻止覆盖，修复使用新版本号。
-- 发布 `:<版本>` 和 `:sha-<Git 提交号>`，并在 Actions 摘要中输出镜像 digest。
-- 发布完成后调用 `Publish Offline Image`，按同一 digest 导出 Docker 镜像，在 GitHub Release 附加 `.tar.gz`、校验值、部署文件及体积明细。
+- `main`、Pull Request 和手动运行执行检查，不发布镜像。
+- 推送 `v*` Git 标签后，检查通过才发布同一受测镜像。
+- 标签匹配 `versions.json` 的容器版本，已有版本禁止覆盖，修复使用新版本号。
+- Docker Hub 只发布 `:<版本>`，不生成 `sha-…` 或 `latest`。
+- 源码提交保存在 OCI 元数据；digest 用于验证与离线导出，不作为额外标签。
+- 随后发布 GitHub Release 离线镜像、校验值、部署文件与体积明细。
 
-在自有仓库启用发布时，配置：
+配置公开 Docker Hub 仓库和以下 GitHub 设置：
 
 | 类型 | 名称 | 内容 |
 | --- | --- | --- |
-| Actions Secret | `DOCKERHUB_USERNAME` | Docker Hub 用户名，按实际账号使用小写 |
-| Actions Secret | `DOCKERHUB_TOKEN` | Docker Hub 专用写入令牌 |
-| Actions Variable，可选 | `DOCKERHUB_IMAGE` | 目标镜像仓库；默认 `wangtengzhou/zotero-pdf2zh-next` |
+| Actions Secret | `DOCKERHUB_USERNAME` | 小写 Docker Hub 用户名 |
+| Actions Secret | `DOCKERHUB_TOKEN` | 专用写入令牌 |
+| Actions Variable，可选 | `DOCKERHUB_IMAGE` | 默认 `wangtengzhou/zotero-pdf2zh-next` |
 
-目标 Docker Hub 仓库需为公开仓库，以便执行已有版本检查。发布凭据不会提供给 Pull Request 检查。
+Pull Request 不使用发布凭据。
 
-### Publish Offline Image
+## 补充离线附件
 
-也可手动运行此流程，为已有版本补充离线镜像。输入现有 Git 标签（如 `v0.1.0`）以及已发布镜像的 `sha256:` digest。流程拉取该镜像，核对版本、源码提交和平台，导出并实际执行 `docker load` 校验后上传 Release 附件，不重新构建或更改原镜像。
+手动运行 `Publish Offline Image`，输入已有 Git 标签和对应的 `sha256:` 镜像摘要。流程验证版本、源码提交和平台，导出并实际导入检查后上传，不重建或更改版本镜像。
 
-流程使用 GitHub 内置令牌的 `contents: write` 权限，不需要额外配置发布 Secret。已存在的同名附件不自动覆盖；失败重试前检查 Release 状态。二进制镜像保存在 Release 附件中，不提交到 Git 源码历史。
+使用内置 GitHub 令牌的 `contents: write` 权限。同名附件不自动覆盖，失败重试前检查 Release 状态。大文件存放在 Release 中，不提交到 Git 历史。
 
-### Promote Tested Digest to Latest
+## 反馈
 
-部署指定版本并完成实际 Zotero 翻译验收后，手动运行推广流程，输入该镜像的 `sha256:<64位十六进制摘要>`。流程将同一镜像标记为 `latest`。
-
-## 问题反馈
-
-通过 [GitHub Issues](https://github.com/Wangtengzhou/zotero-pdf2zh-next/issues) 提交镜像版本、平台、部署方式、Zotero / 插件版本、复现步骤及相关日志。提交前遮蔽入口令牌、完整带令牌地址、API 密钥与 PDF 私有内容。
+[GitHub Issues](https://github.com/Wangtengzhou/zotero-pdf2zh-next/issues) 请附镜像版本、平台、部署方式、Zotero／插件版本、复现步骤和日志。先遮蔽令牌、完整带令牌地址、API 密钥及敏感 PDF 信息。
