@@ -1,121 +1,100 @@
-# Zotero PDF2zh Next 容器封装
+# Zotero PDF2zh Next
 
-使用原版 Zotero PDF2zh 服务端与官方 PDFMathTranslate Next，提供 Linux amd64 容器与 GitHub Actions 自动发布。与 NightWatcher314 同名项目无关联。
+[![Build](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml/badge.svg)](https://github.com/Wangtengzhou/zotero-pdf2zh-next/actions/workflows/ci.yml)
+[![Docker Hub](https://img.shields.io/badge/Docker_Hub-wangtengzhou%2Fzotero--pdf2zh--next-2496ED?logo=docker)](https://hub.docker.com/r/wangtengzhou/zotero-pdf2zh-next)
 
-当前：4 个核心测试、云端镜像构建及容器启动检查通过，Docker Hub 已发布 0.1.0。真实 Zotero 翻译联调尚未完成，暂不推广 latest。
+为 [Zotero PDF2zh](https://github.com/guaguastandup/zotero-pdf2zh) 插件提供可部署在服务器上的 PDFMathTranslate Next 后端。
 
-## 版本与入口
+本项目封装原版 Zotero PDF2zh 服务端与官方 [PDFMathTranslate Next](https://github.com/PDFMathTranslate/PDFMathTranslate-next)，提供 Docker 镜像、持久化存储和适用于 HTTPS 反向代理的访问认证。它是独立维护的容器封装项目，与上游及 NightWatcher314 的同名项目无隶属关系。
 
-服务端 4.1.7、pdf2zh-next 2.9.0、BabelDOC 0.6.2，首版容器版本 0.1.0，架构 linux/amd64。
-完整依赖及哈希见 requirements.lock，源码校验值与基础镜像 digest 见 versions.json。
+## 功能
 
-```text
-Zotero -> Lucky HTTPS -> 8890 鉴权网关 -> 127.0.0.1:8891 原服务端 -> Next
-```
+- 在 Linux x86_64 服务器运行 Next 翻译引擎，通过 Zotero 插件提交与获取 PDF。
+- 通过带访问令牌的服务器地址自动认证，客户端更换 IP 后仍可使用。
+- 自动生成并持久化令牌，支持在容器终端查看地址、查看令牌和重置令牌。
+- 持久化翻译配置、PDF 文件及资源缓存。
+- 以非 root 用户运行，构建时固定上游版本及依赖，不在运行时自动升级。
+- 使用 GitHub Actions 构建、检查并发布 Docker Hub 版本镜像。
 
-只需在 Zotero 配置一次带随机令牌的地址，之后自动鉴权，换 IP 无需登录。首次启动自动生成令牌并持久化，普通重启和升级沿用原值。
-镜像以非 root 用户运行，不挂载 docker.sock，不在容器内自动升级源码或安装包。
+## 版本
 
-## 部署
+| 组件 | 版本 |
+| --- | --- |
+| 容器镜像 | `0.1.0` |
+| Zotero PDF2zh 服务端 | `4.1.7` |
+| PDFMathTranslate Next | `2.9.0` |
+| BabelDOC | `0.6.2` |
+| 平台 | `linux/amd64` |
 
-在服务器获取本仓库的 compose.yaml 与 .env.example，使用已发布镜像：
+上游版本与校验值见 [versions.json](versions.json)，发布变更见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 快速开始
+
+需要 Linux x86_64、Docker Engine 与 Docker Compose，以及可用的 HTTPS 反向代理入口。
 
 ```bash
+git clone https://github.com/Wangtengzhou/zotero-pdf2zh-next.git
+cd zotero-pdf2zh-next
 cp .env.example .env
-docker compose pull
 ```
 
-编辑 .env，PUBLIC_BASE_URL 填实际 HTTPS 域名，PDF2ZH_IMAGE 默认使用 wangtengzhou/zotero-pdf2zh-next:0.1.0。也可使用以下 digest 固定镜像：
-
-```text
-wangtengzhou/zotero-pdf2zh-next@sha256:44d27f56df09beca3e8ff9f288b1dc91d0fe7f876e3abfea9807b19baaecaeaf
-```
+编辑 `.env`，将 `PUBLIC_BASE_URL` 设置为实际 HTTPS 域名，例如 `https://pdf.example.com`。同服务器原生运行 Lucky 时，保留默认的 `127.0.0.1:8890` 端口绑定。
 
 ```bash
+docker compose pull
 docker compose up -d
 docker compose ps
-docker compose logs --tail=50
+docker exec zotero-pdf2zh-next pdf2zh-admin url show
 ```
 
-如需本地构建，执行以下命令，并把 .env 的 PDF2ZH_IMAGE 改为 zotero-pdf2zh-next:local。首次构建会下载字体、模型及 Python 包。
+将 Lucky 的 HTTPS 域名反代到 `http://127.0.0.1:8890`，保留完整请求路径。在 Zotero PDF2zh 插件中，将最后一条命令输出的地址填入 **Python Server IP**，引擎选择 **pdf2zh_next**，并配置翻译服务商、模型及 API 密钥。
+
+完整说明：[Docker 部署指南](docs/DEPLOYMENT.md)，包含 Compose、`docker run`、Portainer 和 NAS 图形化部署。
+
+## 镜像标签
+
+镜像仓库：[wangtengzhou/zotero-pdf2zh-next](https://hub.docker.com/r/wangtengzhou/zotero-pdf2zh-next)。
+
+| 引用方式 | 用途 |
+| --- | --- |
+| `:0.1.0` | 正式版本，推荐部署使用 |
+| `:sha-<Git 提交号>` | 对应发布源码的追溯标签，与该版本标签指向同一个镜像 |
+| `@sha256:<镜像摘要>` | 按内容固定镜像，用于精确部署及回滚 |
+| `:latest` | 经过实际 Zotero 验收后手动推广的版本；当前尚未提供 |
+
+`sha-` 标签中的值是 Git 提交号，`sha256:` 后的值是镜像内容摘要，两者含义不同。Docker Hub 会将多个标签并列显示；同一镜像的标签只是不同名称，无需分别下载。
+
+## 管理命令
 
 ```bash
-docker build --platform linux/amd64 \
-  --build-arg SOURCE_URL=https://github.com/Wangtengzhou/zotero-pdf2zh-next \
-  -t zotero-pdf2zh-next:local .
-```
-
-### Lucky 同服务器反代
-
-独立域名配置有效 HTTPS 证书，整站反代到网关并保留路径，不启用登录跳转、BasicAuth 或 IP 自动认证。
-同机原生 Lucky 可使用默认 127.0.0.1:8890。若 Lucky 也在容器里，接入受控共享 Docker 网络并通过服务名访问；Lucky 容器的 127.0.0.1 不是宿主机。
-关闭或脱敏包含完整 URL 的访问日志，不缓存业务请求；上传大小、长任务超时和 SSE 流式转发与网关设置匹配。内部 8891 不发布到宿主机。
-
-### 获取与重置地址
-
-```bash
-# 获取可直接填入 Zotero 的完整地址
+# 显示可填入 Zotero 的完整地址
 docker exec zotero-pdf2zh-next pdf2zh-admin url show
 
-# 只查看当前令牌
+# 查看当前令牌
 docker exec zotero-pdf2zh-next pdf2zh-admin token show
 
-# 重置并显示新地址，无需重启容器
+# 重置令牌并显示新地址
 docker exec zotero-pdf2zh-next pdf2zh-admin token reset
 ```
 
-容器终端可直接运行 pdf2zh-admin。把完整地址填入原插件的 Python Server IP，末尾不加斜线，引擎选择 pdf2zh_next。
-reset 后旧令牌对新请求立即失效，需更新 Zotero 地址；已授权的在途请求可以完成。启动日志只提示查看命令。
-完整 URL 属于凭据；原插件可能在诊断日志或连接检查弹窗中显示它，分享材料时遮蔽。
+在图形化管理器的容器终端中，直接运行 `pdf2zh-admin url show` 等命令。重置无需重启容器，之后需要更新 Zotero 中的地址。普通重启及升级保留原令牌。
 
-## Actions 与 Docker Hub
+## 适用范围
 
-仓库：https://github.com/Wangtengzhou/zotero-pdf2zh-next
+- 面向个人或受信任的小范围使用，所有持有令牌的客户端共享后端数据与配置；没有多用户数据隔离。
+- 对外入口使用 HTTPS，令牌地址属于访问凭据。反向代理日志及插件诊断材料需遮蔽完整地址。
+- 上游任务记录保存在内存，容器重启后清空；持久化卷中的 PDF 保留。
+- 当前入口以 Zotero 插件为主要客户端，未提供浏览器进度面板的路径适配。
+- CI 检查容器启动、引擎 CLI、认证和令牌持久化；端到端 PDF 翻译及 Zotero 附件导入需在部署环境确认。
 
-首次配置：
+## 文档
 
-- Docker Hub 创建公开仓库 wangtengzhou/zotero-pdf2zh-next。
-- GitHub Actions Secrets：DOCKERHUB_USERNAME、DOCKERHUB_TOKEN。使用专用 Docker Hub 写入令牌。
-- 可选 Variable DOCKERHUB_IMAGE，默认 wangtengzhou/zotero-pdf2zh-next。
+- [部署、配置与升级](docs/DEPLOYMENT.md)
+- [公网访问与令牌管理](PUBLIC_ACCESS.md)
+- [系统架构](docs/ARCHITECTURE.md)
+- [开发与镜像发布](CONTRIBUTING.md)
+- [问题反馈](https://github.com/Wangtengzhou/zotero-pdf2zh-next/issues)
 
-Build, Check and Publish：
+## 许可证
 
-- main、PR、手动运行：核心测试、构建与容器启动检查，不发布。
-- 推送 v0.1.0 等 tag：检查后推送同一个镜像，生成 0.1.0 和 sha-<提交号> 标签。
-- tag 必须匹配 versions.json 的 container 字段；已存在的公开版本阻止重复发布。
-- Actions 输出镜像 digest。首次发布后，在 Zotero 实测 PDF 上传、进度、下载及附件导入。
-
-验收后手动运行 Promote Tested Digest to Latest，填写 sha256 digest，只推广原镜像，不重新构建。服务器可以直接使用 digest 固定部署版本。
-
-## 数据、升级与回滚
-
-Compose 命名卷 auth、config、translated、cache 分别保存令牌、服务配置、PDF 与资源缓存。config 可能含翻译 API 密钥，auth 含入口凭据，备份按秘密处理。
-上游任务与历史记录保存在内存，重启后清空；已生成的 PDF 仍保留在 translated 卷。
-不要执行 docker compose down -v；删除 auth 卷会使下次启动生成新令牌。
-
-升级前等待现有任务完成并备份卷数据，修改 .env 的 PDF2ZH_IMAGE 为新版本或 digest：
-
-```bash
-docker compose pull
-docker compose up -d
-```
-
-回滚改回旧 digest 并执行同样命令。配置格式有变化时恢复配套配置备份，保留新生成 PDF。
-
-## 本地维护与检查
-
-Python 3.12 环境：
-
-```bash
-python -m venv .venv
-.venv/bin/python -m pip install -r requirements-gateway.lock
-.venv/bin/python -m unittest discover -s tests -v
-```
-
-Linux Docker 环境可运行 bash scripts/smoke-test.sh IMAGE，检查启动、版本、鉴权、CLI 重置和持久化，不调用收费翻译 API。
-更新 requirements.in 后，用 uv pip compile requirements.in --python-version 3.12 --python-platform x86_64-unknown-linux-gnu --generate-hashes -o requirements.lock 重新生成依赖锁。
-版本升级同时核对 versions.json、Dockerfile 版本标签和断言、pyproject.toml、smoke-test.sh 的版本断言。
-
-首版面向个人使用，不宣称多用户数据隔离或并发配置安全。浏览器进度面板的路径适配暂不提供。
-
-设计：[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)、[PUBLIC_ACCESS.md](PUBLIC_ACCESS.md)。授权：[LICENSE](LICENSE)、[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+本项目自有代码采用 [MIT License](LICENSE)。镜像包含采用 AGPL-3.0 的上游服务端及其他第三方组件，分发与部署时需同时遵守各组件许可证，详情见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
