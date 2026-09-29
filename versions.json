@@ -1,0 +1,10 @@
+{
+  "container": "0.1.0",
+  "server": "4.1.7",
+  "server_url": "https://github.com/guaguastandup/zotero-pdf2zh/releases/download/v4.1.7/server.zip",
+  "server_sha256": "118c7f37844ebeb67f7c9f018421ef1ab72e25e42ee7fd5b83a11c731d4b666b",
+  "pdf2zh_next": "2.9.0",
+  "babeldoc": "0.6.2",
+  "platform": "linux/amd64",
+  "python_image": "python:3.12-slim-bookworm@sha256:392307d22300de8b5986851a12d9176dfc0fc073e65bf6523ebd7dcbeb23564e"
+}

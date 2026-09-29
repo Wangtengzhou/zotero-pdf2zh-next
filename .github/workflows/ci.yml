@@ -1,0 +1,75 @@
+name: Build, Check and Publish
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pdf2zh-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOCKERHUB_IMAGE: ${{ vars.DOCKERHUB_IMAGE || 'wangtengzhou/zotero-pdf2zh-next' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@06da6279cdbca41027908073e81a4544dc79c06b
+        with:
+          python-version: '3.12'
+      - name: Core tests
+        run: |
+          python -m pip install -r requirements-gateway.lock
+          python -m unittest discover -s tests -v
+      - name: Resolve version
+        id: version
+        run: |
+          python -c 'import json, os; v=json.load(open("versions.json"))["container"]; open(os.environ["GITHUB_OUTPUT"],"a").write("value="+v+"\n")'
+      - name: Check new release tag
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/check_release.py
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
+      - name: Build one image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: pdf2zh-local:test
+          build-args: |
+            VERSION=${{ steps.version.outputs.value }}
+            SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
+            REVISION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Container smoke check
+        run: bash scripts/smoke-test.sh pdf2zh-local:test
+      - name: Docker Hub login
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        uses: docker/login-action@783ae9cac559640a24c9212dfa6cd9e998252f9a
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push the tested image
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          docker tag pdf2zh-local:test "$DOCKERHUB_IMAGE:$VERSION"
+          docker tag pdf2zh-local:test "$DOCKERHUB_IMAGE:sha-$GITHUB_SHA"
+          docker push "$DOCKERHUB_IMAGE:$VERSION"
+          docker push "$DOCKERHUB_IMAGE:sha-$GITHUB_SHA"
+          docker buildx imagetools inspect "$DOCKERHUB_IMAGE:$VERSION" >> "$GITHUB_STEP_SUMMARY"

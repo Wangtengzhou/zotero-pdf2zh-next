@@ -1,0 +1,8 @@
+pdf2zh-next==2.9.0
+flask>=3.1,<4
+toml==0.10.2
+pypdf>=6,<7
+packaging>=25
+starlette==0.52.1
+httpx==0.28.1
+uvicorn==0.54.0
