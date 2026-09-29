@@ -178,15 +178,16 @@ THIRD_PARTY_NOTICES.md
 
 当前完成：鉴权与令牌管理、4 个核心测试、上游包校验、完整 Linux 依赖锁、Dockerfile/Compose、Actions/推广流程与部署说明；Actionlint、Ruff 和 YAML 语法检查通过。
 2026-09-29 已推送到 GitHub，并通过首次云端镜像构建和容器启动检查（Actions run 36513219727）。提交作者及提交者按用户最新指示使用 Wangtengzhou，保留 Agent: Codex。
-当前未完成：Zotero 翻译联调、Docker Hub 发布。发布需要 GitHub Actions Secret DOCKERHUB_TOKEN；DOCKERHUB_USERNAME 已配置。
+2026-09-29 已配置 Docker Hub Secrets，并通过 v0.1.0 发布流程（Actions run 36514321090）：核心测试、真实容器检查与镜像推送全部成功。公开镜像 wangtengzhou/zotero-pdf2zh-next:0.1.0，digest 为 sha256:44d27f56df09beca3e8ff9f288b1dc91d0fe7f876e3abfea9807b19baaecaeaf。
+当前未完成：服务器部署、Zotero 翻译联调；完成实际验收后再推广 latest。
 
 ## 10. 已确认、待核实信息与执行边界
 
-- 用户已确认：Linux x86、最新版插件、GitHub 仓库名 zotero-pdf2zh-next、Docker Hub 用户名 Wangtengzhou。
+- 用户已确认：Linux x86、最新版插件、GitHub 仓库名 zotero-pdf2zh-next、Docker Hub 用户名 wangtengzhou（小写）。
 - 服务器 uname -m，以及 Docker / Compose 是否可用。
 - 已安装插件的实际来源、版本号和 Zotero 版本。
 - 已确认公网 HTTPS + 同服务器 Lucky 反代、路径令牌自动鉴权；待确认 Lucky 版本、原生/容器运行方式和公网域名。
-- GitHub 仓库已初始化：https://github.com/Wangtengzhou/zotero-pdf2zh-next，main 分支，有 README 和 MIT LICENSE。Docker Hub 账户与公开目标仓库可用性待确认。
+- GitHub 仓库：https://github.com/Wangtengzhou/zotero-pdf2zh-next，main 分支，保留原 MIT LICENSE。Docker Hub 账户及公开目标仓库已通过实际发布验证。
 - 用于真实翻译验收的服务商配置和样本 PDF。
 
 可以先本地实现与检查。创建本地提交遵守项目身份与 Agent: Codex 正文规则，不修改持久 Git 配置。

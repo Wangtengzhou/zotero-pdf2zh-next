@@ -2,7 +2,7 @@
 
 使用原版 Zotero PDF2zh 服务端与官方 PDFMathTranslate Next，提供 Linux amd64 容器与 GitHub Actions 自动发布。与 NightWatcher314 同名项目无关联。
 
-当前：4 个核心测试、云端镜像构建及容器启动检查通过。真实 Zotero 翻译联调尚未完成，Docker Hub 镜像尚未发布。
+当前：4 个核心测试、云端镜像构建及容器启动检查通过，Docker Hub 已发布 0.1.0。真实 Zotero 翻译联调尚未完成，暂不推广 latest。
 
 ## 版本与入口
 
@@ -18,21 +18,31 @@ Zotero -> Lucky HTTPS -> 8890 鉴权网关 -> 127.0.0.1:8891 原服务端 -> Nex
 
 ## 部署
 
-预构建镜像须先完成下文的首次发布。服务器有 Docker 时，也可直接本地构建：
+在服务器获取本仓库的 compose.yaml 与 .env.example，使用已发布镜像：
 
 ```bash
-docker build --platform linux/amd64 \
-  --build-arg SOURCE_URL=https://github.com/Wangtengzhou/zotero-pdf2zh-next \
-  -t zotero-pdf2zh-next:local .
 cp .env.example .env
+docker compose pull
 ```
 
-编辑 .env，PUBLIC_BASE_URL 填实际 HTTPS 域名；本地构建时 PDF2ZH_IMAGE 填 zotero-pdf2zh-next:local，已发布后可填 Docker Hub 版本或 digest。首次构建会下载字体、模型及 Python 包。
+编辑 .env，PUBLIC_BASE_URL 填实际 HTTPS 域名，PDF2ZH_IMAGE 默认使用 wangtengzhou/zotero-pdf2zh-next:0.1.0。也可使用以下 digest 固定镜像：
+
+```text
+wangtengzhou/zotero-pdf2zh-next@sha256:44d27f56df09beca3e8ff9f288b1dc91d0fe7f876e3abfea9807b19baaecaeaf
+```
 
 ```bash
 docker compose up -d
 docker compose ps
 docker compose logs --tail=50
+```
+
+如需本地构建，执行以下命令，并把 .env 的 PDF2ZH_IMAGE 改为 zotero-pdf2zh-next:local。首次构建会下载字体、模型及 Python 包。
+
+```bash
+docker build --platform linux/amd64 \
+  --build-arg SOURCE_URL=https://github.com/Wangtengzhou/zotero-pdf2zh-next \
+  -t zotero-pdf2zh-next:local .
 ```
 
 ### Lucky 同服务器反代
